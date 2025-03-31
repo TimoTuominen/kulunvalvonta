@@ -26,8 +26,22 @@ namespace kulunvalvonta.Data.Models
 
         public TimeOnly ExitTime { get; set; }
 
+        public EntryReason Reason { get; set; }
+
+        public string ExpandedReason { get; set; }
+
         [Required]
         public int LocationId { get; set; }
 
     }
+
+    public enum EntryReason
+    {
+        Tavaraliikenne,
+        [Display(Name = "Työmaa-ajo")]
+        Työmaa_ajo,
+        Vieras,
+        Huoltotyö
+    }
+
 }
