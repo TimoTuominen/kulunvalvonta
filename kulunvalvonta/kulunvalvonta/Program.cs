@@ -59,7 +59,7 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-    dbContext.Database.Migrate(); // Apply any pending migrations
+    // dbContext.Database.Migrate(); // Apply any pending migrations
 
     // 🔹 Seed roles and admin user
     await SeedRolesAndAdminUser(roleManager, userManager);
