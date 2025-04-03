@@ -12,7 +12,7 @@ using kulunvalvonta.Data;
 namespace kulunvalvonta.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250403071502_InitialCreate")]
+    [Migration("20250401214853_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

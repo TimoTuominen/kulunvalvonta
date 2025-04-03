@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35828.75 d17.13
+VisualStudioVersion = 17.13.35828.75
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kulunvalvonta", "kulunvalvonta\kulunvalvonta\kulunvalvonta.csproj", "{C2513502-3505-4141-82E2-0BAFEF299673}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kulunvalvonta.Client", "kulunvalvonta\kulunvalvonta.Client\kulunvalvonta.Client.csproj", "{52F9BE48-1606-4B04-9852-1BFE29C0DAD9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kulunvalvonta.Shared", "Kulunvalvonta.Shared\Kulunvalvonta.Shared.csproj", "{EB011E88-942B-4C94-9AB4-5DD5768D8314}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{52F9BE48-1606-4B04-9852-1BFE29C0DAD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{52F9BE48-1606-4B04-9852-1BFE29C0DAD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{52F9BE48-1606-4B04-9852-1BFE29C0DAD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB011E88-942B-4C94-9AB4-5DD5768D8314}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB011E88-942B-4C94-9AB4-5DD5768D8314}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB011E88-942B-4C94-9AB4-5DD5768D8314}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB011E88-942B-4C94-9AB4-5DD5768D8314}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
