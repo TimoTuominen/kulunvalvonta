@@ -6,12 +6,17 @@ using kulunvalvonta.Components;
 using kulunvalvonta.Components.Account;
 using kulunvalvonta.Data;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
 
 var builder = WebApplication.CreateBuilder(args);
 
 //  Load connection string for SQL Server Express
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 
 // Configure Entity Framework to use SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -70,6 +75,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
     app.UseMigrationsEndPoint();
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Kulunvalvonta API V1");
+    });
 }
 else
 {
@@ -91,6 +101,7 @@ app.MapRazorComponents<App>()
 
 // 🔹 Ensure Identity endpoints are properly mapped
 app.MapAdditionalIdentityEndpoints();
+app.MapTrafficdataEndpoints();
 
 app.Run();
 
