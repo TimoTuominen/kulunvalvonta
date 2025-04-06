@@ -1,98 +1,58 @@
 ﻿@page "/mainview"
 @using Microsoft.AspNetCore.Components.QuickGrid;
+@using Kulunvalvonta.Shared;
 @rendermode InteractiveAuto
 @inject HttpClient Http
 
 <PageTitle>Traffic Data</PageTitle>
 
-@if (trafficData == null)
+@if (DataProvider == null)
 {
     <p><em>Loading...</em></p>
 }
 else
 {
-    <QuickGrid TItem="Trafficdata" Items="@trafficData">
-        <Columns>
-            <QuickGridColumn Title="Reg Number" SortExpression="@(t => t.RegNumber)">
-                <Template Context="item">
-                    @item.RegNumber
-                </Template>
-            </QuickGridColumn>
-            <QuickGridColumn Title="Driver Name" SortExpression="@(t => t.DriverName)">
-                <Template Context="item">
-                    @item.DriverName
-                </Template>
-            </QuickGridColumn>
-            <QuickGridColumn Title="Company" SortExpression="@(t => t.Company)">
-                <Template Context="item">
-                    @item.Company
-                </Template>
-            </QuickGridColumn>
-            <QuickGridColumn Title="Phone Number" SortExpression="@(t => t.PhoneNumber)">
-                <Template Context="item">
-                    @item.PhoneNumber
-                </Template>
-            </QuickGridColumn>
-            <QuickGridColumn Title="Date" SortExpression="@(t => t.Date)">
-                <Template Context="item">
-                    @item.Date.ToShortDateString()
-                </Template>
-            </QuickGridColumn>
-            <QuickGridColumn Title="Entry Time" SortExpression="@(t => t.EntryTime)">
-                <Template Context="item">
-                    @item.EntryTime.ToShortTimeString()
-                </Template>
-            </QuickGridColumn>
-            <QuickGridColumn Title="Exit Time" SortExpression="@(t => t.ExitTime)">
-                <Template Context="item">
-                    @item.ExitTime.ToShortTimeString()
-                </Template>
-            </QuickGridColumn>
-            <QuickGridColumn Title="Reason" SortExpression="@(t => t.Reason)">
-                <Template Context="item">
-                    @item.Reason.ToString()
-                </Template>
-            </QuickGridColumn>
-            <QuickGridColumn Title="Expanded Reason" SortExpression="@(t => t.ExpandedReason)">
-                <Template Context="item">
-                    @item.ExpandedReason
-                </Template>
-            </QuickGridColumn>
-        </Columns>
-    </QuickGrid>
+
+    <div class="container">
+        <div class="col-lg-8 col-md-10 col-sm-12">
+            <h3 class="title">Liikenne</h3>
+            <div class="grid">
+                <QuickGrid ItemsProvider="DataProvider">
+                    <PropertyColumn Property="p => p.RegNumber" Title="Rekisterinumero"></PropertyColumn>
+                    <PropertyColumn Property="p => p.DriverName" Title="Kuljettaja" ></PropertyColumn>
+                    <PropertyColumn Property="p => p.Company" Title="Yritys"></PropertyColumn>
+
+                </QuickGrid>
+            </div>
+        </div>
+    </div>
+
+
+
 }
 
 @code {
-    // List to hold the data fetched from the API.
-    private List<Trafficdata> trafficData;
+    GridItemsProvider<TrafficdataDto>? DataProvider;
+    //private List<TrafficdataDto>? trafficData;
 
-    // Fetch the data when the component initializes.
-    protected override async Task OnInitializedAsync()
-    {
-        trafficData = await Http.GetFromJsonAsync<List<Trafficdata>>("/trafficdata");
-    }
 
-    // DTO model representing Trafficdata; ideally this is shared between client and server.
-    public class Trafficdata
+    protected override void OnInitialized()
     {
-        public string Id { get; set; }
-        public string RegNumber { get; set; }
-        public string DriverName { get; set; }
-        public string Company { get; set; }
-        public string PhoneNumber { get; set; }
-        public DateOnly Date { get; set; }
-        public TimeOnly EntryTime { get; set; }
-        public TimeOnly ExitTime { get; set; }
-        public EntryReason Reason { get; set; }
-        public string ExpandedReason { get; set; }
-        public int LocationId { get; set; }
-    }
+        DataProvider = async (request) =>
+        {
+            var allData = await Http.GetFromJsonAsync<List<TrafficdataDto>>("/trafficdata")
+                           ?? new List<TrafficdataDto>();
 
-    public enum EntryReason
-    {
-        Tavaraliikenne,
-        Työmaa_ajo,
-        Vieras,
-        Huoltotyö
+            var items = allData
+                .Skip(request.StartIndex)
+                .Take(request.Count ?? allData.Count)
+                .ToList();
+
+            return new GridItemsProviderResult<TrafficdataDto>
+                {
+                    Items = items,
+                    TotalItemCount = allData.Count
+                };
+        };
     }
 }

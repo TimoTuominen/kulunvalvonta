@@ -3,19 +3,35 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using kulunvalvonta.Data.Models;
 using kulunvalvonta.Data;
+using Kulunvalvonta.Shared;
 
 public static class TrafficdataEndpoints
 {
     public static IEndpointRouteBuilder MapTrafficdataEndpoints(this IEndpointRouteBuilder app)
     {
-        // Endpoint to get all Trafficdata records
+        // GET ALL DATA
         app.MapGet("/trafficdata", async (ApplicationDbContext db) =>
         {
-            var data = await db.Trafficdata.ToListAsync();
+            var data = await db.Trafficdata
+                               .Select(t => new Kulunvalvonta.Shared.TrafficdataDto
+                               {
+                                   Id = t.Id.ToString(), 
+                                   RegNumber = t.RegNumber,
+                                   DriverName = t.DriverName,
+                                   Company = t.Company,
+                                   PhoneNumber = t.PhoneNumber,
+                                   Date = t.Date,
+                                   EntryTime = t.EntryTime,
+                                   ExitTime = t.ExitTime,
+                                   Reason = t.Reason,
+                                   ExpandedReason = t.ExpandedReason,
+                                   LocationId = t.LocationId
+                               })
+                               .ToListAsync();
             return Results.Ok(data);
         });
 
-        // Endpoint to get a specific Trafficdata record by Id
+        // GET DATA BY ID
         app.MapGet("/trafficdata/{id}", async (string id, ApplicationDbContext db) =>
         {
             if (!Ulid.TryParse(id, out var ulid))
