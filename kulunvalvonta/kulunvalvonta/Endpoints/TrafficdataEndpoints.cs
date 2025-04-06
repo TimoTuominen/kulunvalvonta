@@ -9,13 +9,13 @@ public static class TrafficdataEndpoints
 {
     public static IEndpointRouteBuilder MapTrafficdataEndpoints(this IEndpointRouteBuilder app)
     {
-        // GET ALL DATA
+        // Nouda kaikki liikenne data
         app.MapGet("/trafficdata", async (ApplicationDbContext db) =>
         {
             var data = await db.Trafficdata
                                .Select(t => new Kulunvalvonta.Shared.TrafficdataDto
                                {
-                                   Id = t.Id.ToString(), 
+                                   Id = t.Id.ToString(),
                                    RegNumber = t.RegNumber,
                                    DriverName = t.DriverName,
                                    Company = t.Company,
@@ -25,13 +25,14 @@ public static class TrafficdataEndpoints
                                    ExitTime = t.ExitTime,
                                    Reason = t.Reason,
                                    ExpandedReason = t.ExpandedReason,
-                                   LocationId = t.LocationId
+                                   LocationId = t.LocationId,
+                                   LocationName = t.Location.LocationName 
                                })
                                .ToListAsync();
             return Results.Ok(data);
         });
 
-        // GET DATA BY ID
+        // Hae liikenne data id:n perusteella
         app.MapGet("/trafficdata/{id}", async (string id, ApplicationDbContext db) =>
         {
             if (!Ulid.TryParse(id, out var ulid))

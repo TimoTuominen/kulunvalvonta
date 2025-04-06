@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Kulunvalvonta.Shared;
 
 namespace kulunvalvonta.Data.Models
@@ -33,6 +34,9 @@ namespace kulunvalvonta.Data.Models
 
         [Required]
         public int LocationId { get; set; }
+
+        [ForeignKey(nameof(LocationId))]
+        public Location Location { get; set; }
 
     }
 

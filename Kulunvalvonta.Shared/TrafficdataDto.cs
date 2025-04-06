@@ -22,6 +22,7 @@ namespace Kulunvalvonta.Shared
         public EntryReason? Reason { get; set; }
         public string ExpandedReason { get; set; }
         public int LocationId { get; set; }
+        public string LocationName { get; set; }
     }
 
     public enum EntryReason
