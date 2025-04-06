@@ -13,6 +13,63 @@
 }
 else
 {
+    <div class="container">
+        <div class="col-lg-8 col-md-10 col-sm-12">
+            <h3 class="title">Lisää uusi tapahtuma</h3>
+            <EditForm Model="@ProvidedData" OnValidSubmit="@OnValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="RegNumber">Rekisterinumero:</label>
+                            <InputText Id="RegNumber" @bind-Value="ProvidedData.RegNumber" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label for="DriverName">Nimi:</label>
+                            <InputText Id="DriverName" @bind-Value="ProvidedData.DriverName" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="Date">Päivämäärä:</label>
+                            <InputDate Id="Date" @bind-Value="ProvidedData.Date" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <div class="form-group">
+
+                        <label for="EntryTime">Klo:</label>
+                            <input type="time" id="Time" @bind="ProvidedData.EntryTime" class="form-control" />
+
+@*                             <label for="EntryTime">Klo:</label>
+                            <InputText Id="EntryTime" @bind-Value="ProvidedData.EntryTime" class="form-control" /> *@
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="Reason">Syy:</label>
+                        <InputSelect Id="Reason" @bind-Value="ProvidedData.Reason" class="form-control">
+                            @foreach (EntryReason reason in Enum.GetValues(typeof(EntryReason)))
+                            {
+                                <option value="@reason">@reason</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                </div>
+                <br />
+                <button type="submit" class="btn btn-primary">Tallenna</button>
+            </EditForm>
+        </div>
+    </div>
+
+    <br />
 
     <div class="container">
         <div class="col-lg-4 col-md-5 col-sm-6">
@@ -30,7 +87,7 @@ else
                     <PropertyColumn Property="p => p.LocationId" Title="Paikkakunta"></PropertyColumn>
                     <TemplateColumn Title="Toiminnot">
                         <button class="btn btn-primary btn-sm" @onclick="() => Departed(context)">Poistunut</button>
-                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteEntry(context)">Poista</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteEntry(context)">X</button>
                     </TemplateColumn>
 
                 </QuickGrid>
@@ -44,6 +101,7 @@ else
 
 @code {
     GridItemsProvider<TrafficdataDto>? DataProvider;
+    private TrafficdataDto ProvidedData = new();
     //private List<TrafficdataDto>? trafficData;
 
 
@@ -65,6 +123,11 @@ else
                     TotalItemCount = allData.Count
                 };
         };
+    }
+
+    private async Task OnValidSubmit()
+    {
+
     }
 
     private void Departed(TrafficdataDto TrafficEntry)
