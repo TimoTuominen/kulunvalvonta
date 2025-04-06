@@ -3,6 +3,7 @@
 @using Kulunvalvonta.Shared;
 @rendermode InteractiveAuto
 @inject HttpClient Http
+@inject NavigationManager NavManager
 
 <PageTitle>Traffic Data</PageTitle>
 
@@ -14,13 +15,23 @@ else
 {
 
     <div class="container">
-        <div class="col-lg-8 col-md-10 col-sm-12">
+        <div class="col-lg-4 col-md-5 col-sm-6">
             <h3 class="title">Liikenne</h3>
-            <div class="grid">
+            <div class="grid text-nowrap">
                 <QuickGrid ItemsProvider="DataProvider">
                     <PropertyColumn Property="p => p.RegNumber" Title="Rekisterinumero"></PropertyColumn>
                     <PropertyColumn Property="p => p.DriverName" Title="Kuljettaja" ></PropertyColumn>
                     <PropertyColumn Property="p => p.Company" Title="Yritys"></PropertyColumn>
+                    <PropertyColumn Property="p => p.Date" Title="Päivämäärä"></PropertyColumn>
+                    <PropertyColumn Property="p => p.EntryTime" Title="Sisään"></PropertyColumn>
+                    <PropertyColumn Property="p => p.ExitTime" Title="Ulos"></PropertyColumn>
+                    <PropertyColumn Property="p => p.Reason" Title="Syy"></PropertyColumn>
+                    <PropertyColumn Property="p => p.ExpandedReason" Title="Lisätiedot"></PropertyColumn>
+                    <PropertyColumn Property="p => p.LocationId" Title="Paikkakunta"></PropertyColumn>
+                    <TemplateColumn Title="Toiminnot">
+                        <button class="btn btn-primary btn-sm" @onclick="() => Departed(context)">Poistunut</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteEntry(context)">Poista</button>
+                    </TemplateColumn>
 
                 </QuickGrid>
             </div>
@@ -55,4 +66,15 @@ else
                 };
         };
     }
+
+    private void Departed(TrafficdataDto TrafficEntry)
+    {
+        //NavManager.NavigateTo();
+    }
+
+    private void DeleteEntry(TrafficdataDto TrafficEntry)
+    {
+        //NavManager.NavigateTo();
+    }
+
 }

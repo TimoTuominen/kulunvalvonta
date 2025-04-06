@@ -10,53 +10,56 @@ using Microsoft.AspNetCore.Builder;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//  Load connection string for SQL Server Express
+// SQL Serverin yhteys
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped(sp => new HttpClient
+{
+    BaseAddress = new Uri("https://localhost:7209/")
+});
 
 
-// Configure Entity Framework to use SQL Server
+// EF:n configurointi
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-//  Configure Identity services with Entity Framework stores and add roles
+//  Configuroi Identity server ja lisää roolit
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
-    //  Configure password requirements (modify as needed)
+    // Salasana vaatimukset
     options.Password.RequiredLength = 8;
     options.Password.RequireNonAlphanumeric = true;
 })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
-    .AddRoleManager<RoleManager<IdentityRole>>()  // Explicitly add RoleManager
-    .AddRoles<IdentityRole>()  // Explicitly add roles
-    .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext>>()  // Explicitly add role store
+    .AddRoleManager<RoleManager<IdentityRole>>()  // Lisää RoleManager
+    .AddRoles<IdentityRole>()  // Lisää roolit
+    .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext>>()  // Lisää role store
     .AddDefaultTokenProviders();
 
-//  Register additional services
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-//  Add Blazor services
+//  Lisää Blazor palvelut
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents()
     .AddAuthenticationStateSerialization();
 
-//  Add authentication middleware (Identity cookies handled by AddIdentity())
-builder.Services.AddAuthentication(); // No need to manually configure cookies
+//  Lisää autentikointi middleware 
+builder.Services.AddAuthentication(); 
 
 var app = builder.Build();
 
-// Ensure database is migrated & seed admin user on startup
+// Lisää Admin tili käynnistyksen yhteydessä
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -66,11 +69,10 @@ using (var scope = app.Services.CreateScope())
 
     // dbContext.Database.Migrate(); // Apply any pending migrations
 
-    // 🔹 Seed roles and admin user
     await SeedRolesAndAdminUser(roleManager, userManager);
 }
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
@@ -90,7 +92,7 @@ else
 app.UseHttpsRedirection();
 app.UseAntiforgery();
 
-app.UseAuthentication(); // 🔹 Ensure authentication middleware is included
+app.UseAuthentication(); 
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -99,13 +101,12 @@ app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(kulunvalvonta.Client._Imports).Assembly);
 
-// 🔹 Ensure Identity endpoints are properly mapped
 app.MapAdditionalIdentityEndpoints();
 app.MapTrafficdataEndpoints();
 
 app.Run();
 
-// 🔹 Extracted Role & Admin Seeding into an Async Method
+// Roolien ja admin käyttäjän luonti
 async Task SeedRolesAndAdminUser(RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager)
 {
     string adminRole = "Admin";
