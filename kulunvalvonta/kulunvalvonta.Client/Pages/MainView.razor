@@ -7,7 +7,7 @@
 
 <PageTitle>Traffic Data</PageTitle>
 
-@if (DataProvider == null)
+@if (DataProvider == null || Locations == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -45,8 +45,8 @@ else
                     <div class="col-md-2">
                         <div class="form-group">
 
-                        <label for="EntryTime">Klo:</label>
-                            <input type="time" id="Time" @bind="ProvidedData.EntryTime" class="form-control" />
+                        <label for="time">Klo:</label>
+                            <input type="time" id="time" @bind="ProvidedData.EntryTime" class="form-control" />
 
 @*                             <label for="EntryTime">Klo:</label>
                             <InputText Id="EntryTime" @bind-Value="ProvidedData.EntryTime" class="form-control" /> *@
@@ -54,14 +54,35 @@ else
                     </div>
                     <div class="col-md-4">
                         <label for="Reason">Syy:</label>
-                        <InputSelect Id="Reason" @bind-Value="ProvidedData.Reason" class="form-control">
+                        <InputSelect Id="Reason" @bind-Value="SelectedReasonInt" class="form-control">
+                            <option value="">-- Valitse syy --</option>
                             @foreach (EntryReason reason in Enum.GetValues(typeof(EntryReason)))
                             {
-                                <option value="@reason">@reason</option>
+                                <option value="@((int)reason)">@reason</option>
                             }
                         </InputSelect>
                     </div>
+                    <div class="row">
 
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="ExpandedReason">Lisätiedot:</label>
+                                <InputText Id="ExpandedReason" @bind-Value="ProvidedData.ExpandedReason" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="LocationId">Paikkakunta:</label>
+                                <InputSelect Id="LocationId" @bind-Value="ProvidedData.LocationId" class="form-control">
+                                    <option value="0">-- Valitse paikkakunta --</option>
+                                    @foreach (var location in Locations)
+                                    {
+                                        <option value="@location.LocationId">@location.LocationName</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <br />
                 <button type="submit" class="btn btn-primary">Tallenna</button>
@@ -102,10 +123,17 @@ else
 @code {
     GridItemsProvider<TrafficdataDto>? DataProvider;
     private TrafficdataDto ProvidedData = new();
+    private List<LocationDto> Locations = new ();
     //private List<TrafficdataDto>? trafficData;
 
+    private int? SelectedReasonInt
+    {
+        get => ProvidedData.Reason.HasValue ? (int)ProvidedData.Reason.Value : null;
+        set => ProvidedData.Reason = value.HasValue ? (EntryReason)value.Value : null;
+    }
 
-    protected override void OnInitialized()
+
+    protected override async Task OnInitializedAsync()
     {
         DataProvider = async (request) =>
         {
@@ -123,11 +151,23 @@ else
                     TotalItemCount = allData.Count
                 };
         };
+        Locations = await Http.GetFromJsonAsync<List<LocationDto>>("/locations");
     }
 
     private async Task OnValidSubmit()
     {
-
+        
+        var response = await Http.PostAsJsonAsync("/trafficdata", ProvidedData);
+        if (response.IsSuccessStatusCode)
+        {
+           
+            ProvidedData = new TrafficdataDto();
+            StateHasChanged();
+        }
+        else
+        {
+            Console.Error.WriteLine("Error saving the data.");
+        }
     }
 
     private void Departed(TrafficdataDto TrafficEntry)
