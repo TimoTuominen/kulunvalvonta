@@ -1,4 +1,4 @@
-﻿@page "/mainview"
+﻿@page "/search"
 @using Microsoft.AspNetCore.Components.QuickGrid;
 @using Kulunvalvonta.Shared;
 @rendermode InteractiveAuto
@@ -41,35 +41,8 @@ else
                             <InputDate Id="Date" @bind-Value="ProvidedData.Date" class="form-control" />
                         </div>
                     </div>
-
-                    <div class="col-md-2">
-                        <div class="form-group">
-
-                        <label for="time">Klo:</label>
-                            <input type="time" id="time" @bind="ProvidedData.EntryTime" class="form-control" />
-
-@*                             <label for="EntryTime">Klo:</label>
-                            <InputText Id="EntryTime" @bind-Value="ProvidedData.EntryTime" class="form-control" /> *@
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="Reason">Syy:</label>
-                        <InputSelect Id="Reason" @bind-Value="SelectedReasonInt" class="form-control">
-                            <option value="">-- Valitse syy --</option>
-                            @foreach (EntryReason reason in Enum.GetValues(typeof(EntryReason)))
-                            {
-                                <option value="@((int)reason)">@reason</option>
-                            }
-                        </InputSelect>
-                    </div>
                     <div class="row">
 
-                        <div class="col-md-8">
-                            <div class="form-group">
-                                <label for="ExpandedReason">Lisätiedot:</label>
-                                <InputText Id="ExpandedReason" @bind-Value="ProvidedData.ExpandedReason" class="form-control" />
-                            </div>
-                        </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="LocationId">Paikkakunta:</label>
@@ -85,7 +58,7 @@ else
                     </div>
                 </div>
                 <br />
-                <button type="submit" class="btn btn-primary">Tallenna</button>
+                <button type="submit" class="btn btn-primary">Hae</button>
             </EditForm>
         </div>
     </div>
@@ -94,11 +67,11 @@ else
 
     <div class="container">
         <div class="col-lg-4 col-md-5 col-sm-6">
-            <h3 class="title">Liikenne</h3>
+            <h3 class="title">Tulokset</h3>
             <div class="grid text-nowrap">
                 <QuickGrid ItemsProvider="DataProvider">
                     <PropertyColumn Property="p => p.RegNumber" Title="Rekisterinumero"></PropertyColumn>
-                    <PropertyColumn Property="p => p.DriverName" Title="Kuljettaja" ></PropertyColumn>
+                    <PropertyColumn Property="p => p.DriverName" Title="Kuljettaja"></PropertyColumn>
                     <PropertyColumn Property="p => p.Company" Title="Yritys"></PropertyColumn>
                     <PropertyColumn Property="p => p.Date" Title="Päivämäärä"></PropertyColumn>
                     <PropertyColumn Property="p => p.EntryTime" Title="Sisään"></PropertyColumn>
@@ -106,11 +79,6 @@ else
                     <PropertyColumn Property="p => p.Reason" Title="Syy"></PropertyColumn>
                     <PropertyColumn Property="p => p.ExpandedReason" Title="Lisätiedot"></PropertyColumn>
                     <PropertyColumn Property="p => p.LocationName" Title="Paikkakunta"></PropertyColumn>
-                    <TemplateColumn Title="Toiminnot">
-                        <button class="btn btn-primary btn-sm" @onclick="() => Departed(context)">Poistunut</button>
-                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteEntry(context)">X</button>
-                    </TemplateColumn>
-
                 </QuickGrid>
             </div>
         </div>
@@ -123,14 +91,10 @@ else
 @code {
     GridItemsProvider<TrafficdataDto>? DataProvider;
     private TrafficdataDto ProvidedData = new();
-    private List<LocationDto>? Locations = new ();
+    private List<LocationDto>? Locations = new();
     //private List<TrafficdataDto>? trafficData;
 
-    private int? SelectedReasonInt
-    {
-        get => ProvidedData.Reason.HasValue ? (int)ProvidedData.Reason.Value : null;
-        set => ProvidedData.Reason = value.HasValue ? (EntryReason)value.Value : null;
-    }
+
 
 
     protected override async Task OnInitializedAsync()
@@ -156,18 +120,8 @@ else
 
     private async Task OnValidSubmit()
     {
-        
-        var response = await Http.PostAsJsonAsync("/trafficdata", ProvidedData);
-        if (response.IsSuccessStatusCode)
-        {
-           
-            ProvidedData = new TrafficdataDto();
-            StateHasChanged();
-        }
-        else
-        {
-            Console.Error.WriteLine("Error saving the data.");
-        }
+
+
     }
 
     private void Departed(TrafficdataDto TrafficEntry)

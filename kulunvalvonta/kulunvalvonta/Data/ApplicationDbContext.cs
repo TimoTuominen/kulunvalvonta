@@ -15,10 +15,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         base.OnModelCreating(modelBuilder);
 
-        // Create a value converter for Ulid to string
+
         var ulidToStringConverter = new ValueConverter<Ulid, string>(
-            ulid => ulid.ToString(), // Convert Ulid to string for storage
-            str => Ulid.Parse(str)   // Convert stored string back to Ulid
+            ulid => ulid.ToString(), // Muutetaan ULID merkkijonoksi tallennettaessa
+            str => Ulid.Parse(str)   // Muutetaan ULID takaisin ULID:ksi lukiessa
         );
 
         modelBuilder.Entity<Trafficdata>(entity =>
