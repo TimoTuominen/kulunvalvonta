@@ -1,8 +1,14 @@
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Blazored.LocalStorage;
+using System.Globalization;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
+// Kulttuuri ja kieli asetukset
+var culture = new CultureInfo("fi-FI");
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
 
 
 builder.Services.AddScoped(sp => new HttpClient

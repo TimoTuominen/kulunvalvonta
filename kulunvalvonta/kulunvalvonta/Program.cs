@@ -8,6 +8,7 @@ using kulunvalvonta.Data;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Builder;
 using Blazored.LocalStorage;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,11 @@ builder.Services.AddScoped(sp => new HttpClient
     BaseAddress = new Uri("https://localhost:7209/")
 });
 
+
+// Kulttuuri ja kieli asetukset
+var culture = new CultureInfo("fi-FI");
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
 
 // EF:n configurointi
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

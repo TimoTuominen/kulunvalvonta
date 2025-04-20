@@ -26,7 +26,7 @@ else
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="RegNumber">Rekisterinumero:</label>
-                            <InputText Id="RegNumber" @bind-Value="ProvidedData.RegNumber" class="form-control" />
+                            <InputText Id="RegNumber" @bind-Value="ProvidedData.RegNumber" @oninput="OnRegNumberInput" class="form-control" style="text-transform: uppercase;" />
                         </div>
                     </div>
                     <div class="col-md-8">
@@ -36,14 +36,14 @@ else
                         </div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6">
+                <div class="row align-items-end">
+                    <div class="col-md-5">
                         <div class="form-group">
                             <label for="DriverName">Nimi:</label>
                             <InputText Id="DriverName" @bind-Value="ProvidedData.DriverName" class="form-control" />
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label for="Date">Päivämäärä:</label>
                             <InputDate Id="Date" @bind-Value="ProvidedData.Date" class="form-control" />
@@ -55,9 +55,13 @@ else
 
                             <label for="time">Klo:</label>
                             <input type="time" id="time" @bind="ProvidedData.EntryTime" class="form-control" />
-
-                            @*                             <label for="EntryTime">Klo:</label>
-                            <InputText Id="EntryTime" @bind-Value="ProvidedData.EntryTime" class="form-control" /> *@
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="SetCurrentDateTime">
+                            Nyt
+                        </button>
                         </div>
                     </div>
 
@@ -252,6 +256,13 @@ else
         var now = DateTime.Now;
         ProvidedData.Date = DateOnly.FromDateTime(now);
         ProvidedData.EntryTime = TimeOnly.FromDateTime(now);
+    }
+
+    private void OnRegNumberInput(ChangeEventArgs e)
+    {
+        ProvidedData.RegNumber = (e.Value?.ToString() ?? string.Empty)
+                                    .ToUpperInvariant();
+        StateHasChanged();
     }
 
 }
