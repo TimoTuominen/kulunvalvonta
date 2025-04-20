@@ -7,6 +7,7 @@ using kulunvalvonta.Components.Account;
 using kulunvalvonta.Data;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Builder;
+using Blazored.LocalStorage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,7 +56,10 @@ builder.Services.AddRazorComponents()
     .AddAuthenticationStateSerialization();
 
 //  Lisää autentikointi middleware 
-builder.Services.AddAuthentication(); 
+builder.Services.AddAuthentication();
+
+// Lisää Blazored.LocalStorage
+builder.Services.AddBlazoredLocalStorage();
 
 var app = builder.Build();
 

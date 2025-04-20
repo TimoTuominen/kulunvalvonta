@@ -1,9 +1,11 @@
 ﻿@page "/mainview"
 @using Microsoft.AspNetCore.Components.QuickGrid;
 @using Kulunvalvonta.Shared;
-@rendermode InteractiveAuto
+@rendermode InteractiveWebAssembly
+@* @rendermode InteractiveAuto *@
 @inject HttpClient Http
 @inject NavigationManager NavManager
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
 <PageTitle>Traffic Data</PageTitle>
 
@@ -29,12 +31,18 @@ else
                     </div>
                     <div class="col-md-8">
                         <div class="form-group">
-                            <label for="DriverName">Nimi:</label>
-                            <InputText Id="DriverName" @bind-Value="ProvidedData.DriverName" class="form-control" />
+                            <label for="Company">Yritys:</label>
+                            <InputText Id="Company" @bind-Value="ProvidedData.Company" class="form-control" />
                         </div>
                     </div>
                 </div>
                 <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="DriverName">Nimi:</label>
+                            <InputText Id="DriverName" @bind-Value="ProvidedData.DriverName" class="form-control" />
+                        </div>
+                    </div>
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="Date">Päivämäärä:</label>
@@ -45,41 +53,44 @@ else
                     <div class="col-md-2">
                         <div class="form-group">
 
-                        <label for="time">Klo:</label>
+                            <label for="time">Klo:</label>
                             <input type="time" id="time" @bind="ProvidedData.EntryTime" class="form-control" />
 
-@*                             <label for="EntryTime">Klo:</label>
+                            @*                             <label for="EntryTime">Klo:</label>
                             <InputText Id="EntryTime" @bind-Value="ProvidedData.EntryTime" class="form-control" /> *@
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <label for="Reason">Syy:</label>
-                        <InputSelect Id="Reason" @bind-Value="SelectedReasonInt" class="form-control">
-                            <option value="">-- Valitse syy --</option>
-                            @foreach (EntryReason reason in Enum.GetValues(typeof(EntryReason)))
-                            {
-                                <option value="@((int)reason)">@reason</option>
-                            }
-                        </InputSelect>
-                    </div>
-                    <div class="row">
 
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="Reason">Syy:</label>
+                            <InputSelect Id="Reason" @bind-Value="SelectedReasonInt" class="form-control">
+                                @*  <option value="">-- Valitse syy --</option> *@
+                                @foreach (EntryReason reason in Enum.GetValues(typeof(EntryReason)))
+                                {
+                                    <option value="@((int)reason)">@reason</option>
+                                }
+                            </InputSelect>
+                        </div>
                         <div class="col-md-8">
                             <div class="form-group">
                                 <label for="ExpandedReason">Lisätiedot:</label>
                                 <InputText Id="ExpandedReason" @bind-Value="ProvidedData.ExpandedReason" class="form-control" />
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="LocationId">Paikkakunta:</label>
-                                <InputSelect Id="LocationId" @bind-Value="ProvidedData.LocationId" class="form-control">
-                                    <option value="0">-- Valitse paikkakunta --</option>
-                                    @foreach (var location in Locations)
-                                    {
-                                        <option value="@location.LocationId">@location.LocationName</option>
-                                    }
-                                </InputSelect>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="LocationId">Paikkakunta:</label>
+                                    <InputSelect Id="LocationId" @bind-Value="ProvidedData.LocationId" class="form-control">
+                                        @* <option value="0">-- Valitse paikkakunta --</option> *@
+                                        @foreach (var location in Locations)
+                                        {
+                                            <option value="@location.LocationId">@location.LocationName</option>
+                                        }
+                                    </InputSelect>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -96,7 +107,7 @@ else
         <div class="col-lg-4 col-md-5 col-sm-6">
             <h3 class="title">Liikenne</h3>
             <div class="grid text-nowrap">
-                <QuickGrid ItemsProvider="DataProvider">
+                <QuickGrid @ref="gridRef" ItemsProvider="DataProvider">
                     <PropertyColumn Property="p => p.RegNumber" Title="Rekisterinumero"></PropertyColumn>
                     <PropertyColumn Property="p => p.DriverName" Title="Kuljettaja" ></PropertyColumn>
                     <PropertyColumn Property="p => p.Company" Title="Yritys"></PropertyColumn>
@@ -121,9 +132,12 @@ else
 }
 
 @code {
+    private QuickGrid<TrafficdataDto>? gridRef;
     GridItemsProvider<TrafficdataDto>? DataProvider;
     private TrafficdataDto ProvidedData = new();
     private List<LocationDto>? Locations = new ();
+    private bool _hasLoadedFromStorage;
+    private bool _didInitDateTime;
     //private List<TrafficdataDto>? trafficData;
 
     private int? SelectedReasonInt
@@ -154,15 +168,68 @@ else
         Locations = await Http.GetFromJsonAsync<List<LocationDto>>("/locations");
     }
 
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Ladataan viimeksi käytetyt tiedot LocalStorageista
+            if (await LocalStorage.ContainKeyAsync("lastReason"))
+            {
+                ProvidedData.Reason =
+                  await LocalStorage.GetItemAsync<EntryReason>("lastReason");
+            }
+            else
+            {
+                ProvidedData.Reason =
+                  (EntryReason)Enum.GetValues(typeof(EntryReason)).GetValue(0)!;
+            }
+
+            if (await LocalStorage.ContainKeyAsync("lastLocationId"))
+                ProvidedData.LocationId = await LocalStorage.GetItemAsync<int>("lastLocationId");
+            else
+            {
+                ProvidedData.LocationId = 1;
+            }
+
+
+            SetCurrentDateTime();
+
+            _hasLoadedFromStorage = true;
+            _didInitDateTime = true;
+
+            StateHasChanged();
+        }
+    }
+
+
     private async Task OnValidSubmit()
     {
         
         var response = await Http.PostAsJsonAsync("/trafficdata", ProvidedData);
         if (response.IsSuccessStatusCode)
         {
-           
-            ProvidedData = new TrafficdataDto();
+            // Tallennetaan tiedot LocalStorageen
+            if (ProvidedData.Reason.HasValue)
+                await LocalStorage.SetItemAsync("lastReason", ProvidedData.Reason.Value);
+                await LocalStorage.SetItemAsync("lastLocationId", ProvidedData.LocationId);
+
+            // Resetoidaan Formin tiedot
+            var last = ProvidedData.Reason;
+            var lastLocationId = ProvidedData.LocationId;
+
+            ProvidedData = new TrafficdataDto
+                {
+                    Reason = last,
+                    LocationId = lastLocationId
+                };
+
+            // 1) Tyhjennetään lomake:
             StateHasChanged();
+
+            // 2) Päivitetään Gridin tiedot
+            if (gridRef is not null)
+                await gridRef.RefreshDataAsync();
         }
         else
         {
@@ -178,6 +245,13 @@ else
     private void DeleteEntry(TrafficdataDto TrafficEntry)
     {
         //NavManager.NavigateTo();
+    }
+
+    private void SetCurrentDateTime()
+    {
+        var now = DateTime.Now;
+        ProvidedData.Date = DateOnly.FromDateTime(now);
+        ProvidedData.EntryTime = TimeOnly.FromDateTime(now);
     }
 
 }
