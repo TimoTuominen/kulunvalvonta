@@ -6,6 +6,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject IJSRuntime JsRuntime
 
 <PageTitle>Traffic Data</PageTitle>
 
@@ -241,14 +242,46 @@ else
         }
     }
 
-    private void Departed(TrafficdataDto TrafficEntry)
+    private async Task Departed(TrafficdataDto entry)
     {
-        //NavManager.NavigateTo();
+        // (optional) confirm
+        if (!await JsRuntime.InvokeAsync<bool>(
+                "confirm",
+                $"Merkataan poistuneeksi {entry.RegNumber} ({entry.Date:d})?"))
+            return;
+
+        var resp = await Http.PostAsync($"/trafficdata/{entry.Id}/exit", null);
+        if (resp.IsSuccessStatusCode)
+        {
+            
+            if (gridRef is not null)
+                await gridRef.RefreshDataAsync();
+        }
+        else
+        {
+            Console.Error.WriteLine($"Ei pystytty merkkaamaan poistuneeksi: {resp.StatusCode}");
+        }
     }
 
-    private void DeleteEntry(TrafficdataDto TrafficEntry)
+    private async Task DeleteEntry(TrafficdataDto entry)
     {
-        //NavManager.NavigateTo();
+        // (Optional) add a confirmation
+        if (!await JsRuntime.InvokeAsync<bool>(
+                "confirm",
+                $"Are you sure you want to delete entry {entry.RegNumber} on {entry.Date:d}?"))
+            return;
+
+        var response = await Http.DeleteAsync($"/trafficdata/{entry.Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            // Refresh the QuickGrid
+            if (gridRef is not null)
+                await gridRef.RefreshDataAsync();
+        }
+        else
+        {
+            Console.Error.WriteLine($"Error deleting entry: {response.StatusCode}");
+        }
     }
 
     private void SetCurrentDateTime()

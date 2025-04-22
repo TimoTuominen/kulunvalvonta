@@ -21,13 +21,20 @@ else
                 <ValidationSummary />
 
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label for="RegNumber">Rekisterinumero:</label>
                             <InputText Id="RegNumber" @bind-Value="ProvidedData.RegNumber" class="form-control" />
                         </div>
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-5">
+                        <div class="form-group">
+                            <label for="Company">Yritys:</label>
+                            <InputText Id="Company" @bind-Value="ProvidedData.Company" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-5">
                         <div class="form-group">
                             <label for="DriverName">Nimi:</label>
                             <InputText Id="DriverName" @bind-Value="ProvidedData.DriverName" class="form-control" />
@@ -35,10 +42,33 @@ else
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
-                            <label for="Date">Päivämäärä:</label>
+                            <label for="Date">Aloitus päivä:</label>
                             <InputDate Id="Date" @bind-Value="ProvidedData.Date" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <div class="form-group">
+
+                            <label for="time">Klo:</label>
+                            <input type="time" id="time" @bind="ProvidedData.EntryTime" class="form-control" />
+                        </div>
+                    </div>
+               
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="Date">Päättyy:</label>
+                            <InputDate Id="EndDate" @bind-Value="ProvidedData.SearchEndDate" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <div class="form-group">
+
+                            <label for="time">Klo:</label>
+                            <input type="time" id="time" @bind="ProvidedData.SearchEndTime" class="form-control" />
                         </div>
                     </div>
                     <div class="row">
@@ -69,7 +99,7 @@ else
         <div class="col-lg-4 col-md-5 col-sm-6">
             <h3 class="title">Tulokset</h3>
             <div class="grid text-nowrap">
-                <QuickGrid ItemsProvider="DataProvider">
+                <QuickGrid @ref="gridRef" ItemsProvider="SearchProvider">
                     <PropertyColumn Property="p => p.RegNumber" Title="Rekisterinumero"></PropertyColumn>
                     <PropertyColumn Property="p => p.DriverName" Title="Kuljettaja"></PropertyColumn>
                     <PropertyColumn Property="p => p.Company" Title="Yritys"></PropertyColumn>
@@ -93,7 +123,7 @@ else
     private TrafficdataDto ProvidedData = new();
     private List<LocationDto>? Locations = new();
     //private List<TrafficdataDto>? trafficData;
-
+    private QuickGrid<TrafficdataDto>? gridRef;
 
 
 
@@ -118,6 +148,16 @@ else
         Locations = await Http.GetFromJsonAsync<List<LocationDto>>("/locations");
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            SetCurrentDateTime();
+
+            StateHasChanged();
+        }
+    }
+
     private async Task OnValidSubmit()
     {
 
@@ -132,6 +172,15 @@ else
     private void DeleteEntry(TrafficdataDto TrafficEntry)
     {
         //NavManager.NavigateTo();
+    }
+
+    private void SetCurrentDateTime()
+    {
+        var now = DateTime.Now;
+        ProvidedData.Date = DateOnly.FromDateTime(now);
+        ProvidedData.EntryTime = TimeOnly.FromDateTime(now);
+        ProvidedData.SearchEndDate = DateOnly.FromDateTime(now);
+        ProvidedData.SearchEndTime = TimeOnly.FromDateTime(now);
     }
 
 }

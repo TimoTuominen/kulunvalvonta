@@ -23,6 +23,9 @@ namespace Kulunvalvonta.Shared
         public string ExpandedReason { get; set; }
         public int LocationId { get; set; }
         public string LocationName { get; set; }
+
+        public DateOnly? SearchEndDate { get; set; }
+        public TimeOnly? SearchEndTime { get; set; }
     }
 
     public enum EntryReason

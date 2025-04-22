@@ -4,32 +4,149 @@ using Microsoft.AspNetCore.Http;
 using kulunvalvonta.Data.Models;
 using kulunvalvonta.Data;
 using Kulunvalvonta.Shared;
+using Microsoft.AspNetCore.Mvc;
 
 public static class TrafficdataEndpoints
 {
     public static IEndpointRouteBuilder MapTrafficdataEndpoints(this IEndpointRouteBuilder app)
     {
         // Nouda kaikki liikenne tiedot
+        //app.MapGet("/trafficdata", async (ApplicationDbContext db) =>
+        //{
+        //    var data = await db.Trafficdata
+        //                       .Select(t => new Kulunvalvonta.Shared.TrafficdataDto
+        //                       {
+        //                           Id = t.Id.ToString(),
+        //                           RegNumber = t.RegNumber,
+        //                           DriverName = t.DriverName,
+        //                           Company = t.Company,
+        //                           PhoneNumber = t.PhoneNumber,
+        //                           Date = t.Date,
+        //                           EntryTime = t.EntryTime,
+        //                           ExitTime = t.ExitTime,
+        //                           Reason = t.Reason,
+        //                           ExpandedReason = t.ExpandedReason,
+        //                           LocationId = t.LocationId,
+        //                           LocationName = t.Location.LocationName 
+        //                       })
+        //                       .ToListAsync();
+        //    return Results.Ok(data);
+        //});
+
         app.MapGet("/trafficdata", async (ApplicationDbContext db) =>
         {
-            var data = await db.Trafficdata
-                               .Select(t => new Kulunvalvonta.Shared.TrafficdataDto
-                               {
-                                   Id = t.Id.ToString(),
-                                   RegNumber = t.RegNumber,
-                                   DriverName = t.DriverName,
-                                   Company = t.Company,
-                                   PhoneNumber = t.PhoneNumber,
-                                   Date = t.Date,
-                                   EntryTime = t.EntryTime,
-                                   ExitTime = t.ExitTime,
-                                   Reason = t.Reason,
-                                   ExpandedReason = t.ExpandedReason,
-                                   LocationId = t.LocationId,
-                                   LocationName = t.Location.LocationName 
-                               })
-                               .ToListAsync();
-            return Results.Ok(data);
+            var open = await db.Trafficdata
+                .Where(t => t.ExitTime == null)
+                .Select(t => new TrafficdataDto
+                {
+                    Id = t.Id.ToString(),
+                    RegNumber = t.RegNumber,
+                    DriverName = t.DriverName,
+                    Company = t.Company,
+                    PhoneNumber = t.PhoneNumber,
+                    Date = t.Date,
+                    EntryTime = t.EntryTime,
+                    ExitTime = t.ExitTime,
+                    Reason = t.Reason,
+                    ExpandedReason = t.ExpandedReason,
+                    LocationId = t.LocationId,
+                    LocationName = t.Location.LocationName
+                })
+                .ToListAsync();
+
+            return Results.Ok(open);
+        });
+
+        // Hake liikenne tiedot hakuehdoilla
+
+        app.MapGet("/trafficdata/search", async (
+                [FromQuery] string? regNumber,
+                [FromQuery] string? driverName,
+                [FromQuery] string? company,
+                [FromQuery] DateOnly? startDate,
+                [FromQuery] TimeOnly? startTime,
+                [FromQuery] DateOnly? endDate,
+                [FromQuery] TimeOnly? endTime,
+                [FromQuery] int? locationId,
+                [FromQuery] int skip,
+                [FromQuery] int take,
+                ApplicationDbContext db) =>
+        {
+            IQueryable<Trafficdata> q = db.Trafficdata;
+
+            if (!string.IsNullOrWhiteSpace(regNumber))
+                q = q.Where(t => t.RegNumber.Contains(regNumber));
+
+            if (!string.IsNullOrWhiteSpace(driverName))
+                q = q.Where(t => t.DriverName!.Contains(driverName));
+
+            if (!string.IsNullOrWhiteSpace(company))
+                q = q.Where(t => t.Company!.Contains(company));
+
+            // ——> START filter: date+time without ToTimeSpan()
+            if (startDate.HasValue)
+            {
+                if (startTime.HasValue)
+                {
+                    // either strictly after the start date,
+                    // or on the start date with EntryTime >= startTime
+                    q = q.Where(t =>
+                        t.Date > startDate.Value ||
+                        (t.Date == startDate.Value && t.EntryTime! >= startTime.Value));
+                }
+                else
+                {
+                    q = q.Where(t => t.Date >= startDate.Value);
+                }
+            }
+
+            // ——> END filter: date+time without ToTimeSpan()
+            if (endDate.HasValue)
+            {
+                if (endTime.HasValue)
+                {
+                    // either strictly before the end date,
+                    // or on the end date with EntryTime <= endTime
+                    q = q.Where(t =>
+                        t.Date < endDate.Value ||
+                        (t.Date == endDate.Value && t.EntryTime! <= endTime.Value));
+                }
+                else
+                {
+                    q = q.Where(t => t.Date <= endDate.Value);
+                }
+            }
+
+            if (locationId.HasValue && locationId.Value != 0)
+                q = q.Where(t => t.LocationId == locationId.Value);
+
+            var total = await q.CountAsync();
+
+            var page = await q
+                .OrderByDescending(t => t.Date).ThenBy(t => t.EntryTime)
+                .Skip(skip)
+                .Take(take)
+                .Select(t => new TrafficdataDto
+                {
+                    Id = t.Id.ToString(),
+                    RegNumber = t.RegNumber,
+                    DriverName = t.DriverName,
+                    Company = t.Company,
+                    Date = t.Date,
+                    EntryTime = t.EntryTime,
+                    ExitTime = t.ExitTime,
+                    Reason = t.Reason,
+                    ExpandedReason = t.ExpandedReason,
+                    LocationId = t.LocationId,
+                    LocationName = t.Location.LocationName
+                })
+                .ToListAsync();
+
+            return Results.Ok(new
+            {
+                Items = page,
+                TotalCount = total
+            });
         });
 
 
@@ -60,6 +177,39 @@ public static class TrafficdataEndpoints
             return Results.Created($"/trafficdata/{trafficdata.Id}", trafficdata);
         });
 
+        // Poista liikenne tieto id:n perusteella
+
+        app.MapDelete("/trafficdata/{id}", async (string id, ApplicationDbContext db) =>
+        {
+            if (!Ulid.TryParse(id, out var ulid))
+                return Results.BadRequest("Invalid ULID format.");
+
+            var entity = await db.Trafficdata.FindAsync(ulid);
+            if (entity is null)
+                return Results.NotFound();
+
+            db.Trafficdata.Remove(entity);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+
+
+        // Merkkaa liikenne tieto ulos
+        app.MapPost("/trafficdata/{id}/exit", async (string id, ApplicationDbContext db) =>
+        {
+            if (!Ulid.TryParse(id, out var ulid))
+                return Results.BadRequest("Invalid ULID format.");
+
+            var entity = await db.Trafficdata.FindAsync(ulid);
+            if (entity is null)
+                return Results.NotFound();
+
+            // stamp the current server time
+            entity.ExitTime = TimeOnly.FromDateTime(DateTime.Now);
+
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
 
         // Hae liikenne data id:n perusteella
         app.MapGet("/trafficdata/{id}", async (string id, ApplicationDbContext db) =>
