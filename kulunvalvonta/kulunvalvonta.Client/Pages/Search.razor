@@ -1,186 +1,197 @@
 ﻿@page "/search"
-@using Microsoft.AspNetCore.Components.QuickGrid;
-@using Kulunvalvonta.Shared;
-@rendermode InteractiveAuto
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using Kulunvalvonta.Shared
+@rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavManager
 
-<PageTitle>Traffic Data</PageTitle>
+<PageTitle>Traffic Data Search</PageTitle>
 
-@if (DataProvider == null || Locations == null)
+@if (DataProvider is null || Locations is null)
 {
-    <p><em>Loading...</em></p>
+    <p><em>Loading…</em></p>
 }
 else
 {
-    <div class="container">
-        <div class="col-lg-8 col-md-10 col-sm-12">
-            <h3 class="title">Lisää uusi tapahtuma</h3>
-            <EditForm Model="@ProvidedData" OnValidSubmit="@OnValidSubmit">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
+    <div class="container mb-4">
+        <h3 class="title">Hae liikennetapahtumia</h3>
+        <EditForm Model="Criteria"
+                  OnValidSubmit="OnValidSubmit"
+                  FormName="searchForm">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
-                <div class="row">
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label for="RegNumber">Rekisterinumero:</label>
-                            <InputText Id="RegNumber" @bind-Value="ProvidedData.RegNumber" class="form-control" />
-                        </div>
-                    </div>
-                    <div class="col-md-5">
-                        <div class="form-group">
-                            <label for="Company">Yritys:</label>
-                            <InputText Id="Company" @bind-Value="ProvidedData.Company" class="form-control" />
-                        </div>
-                    </div>
-
-                    <div class="col-md-5">
-                        <div class="form-group">
-                            <label for="DriverName">Nimi:</label>
-                            <InputText Id="DriverName" @bind-Value="ProvidedData.DriverName" class="form-control" />
-                        </div>
-                    </div>
+            <div class="row g-3">
+                <!-- Rekisterinumero -->
+                <div class="col-md-2">
+                    <label class="form-label">Rekisterinumero</label>
+                    <input class="form-control" @bind="Criteria.RegNumber" />
                 </div>
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="Date">Aloitus päivä:</label>
-                            <InputDate Id="Date" @bind-Value="ProvidedData.Date" class="form-control" />
-                        </div>
-                    </div>
 
-                    <div class="col-md-2">
-                        <div class="form-group">
-
-                            <label for="time">Klo:</label>
-                            <input type="time" id="time" @bind="ProvidedData.EntryTime" class="form-control" />
-                        </div>
-                    </div>
-               
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="Date">Päättyy:</label>
-                            <InputDate Id="EndDate" @bind-Value="ProvidedData.SearchEndDate" class="form-control" />
-                        </div>
-                    </div>
-
-                    <div class="col-md-2">
-                        <div class="form-group">
-
-                            <label for="time">Klo:</label>
-                            <input type="time" id="time" @bind="ProvidedData.SearchEndTime" class="form-control" />
-                        </div>
-                    </div>
-                    <div class="row">
-
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="LocationId">Paikkakunta:</label>
-                                <InputSelect Id="LocationId" @bind-Value="ProvidedData.LocationId" class="form-control">
-                                    <option value="0">-- Valitse paikkakunta --</option>
-                                    @foreach (var location in Locations)
-                                    {
-                                        <option value="@location.LocationId">@location.LocationName</option>
-                                    }
-                                </InputSelect>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Yritys -->
+                <div class="col-md-5">
+                    <label class="form-label">Yritys</label>
+                    <input class="form-control" @bind="Criteria.Company" />
                 </div>
-                <br />
-                <button type="submit" class="btn btn-primary">Hae</button>
-            </EditForm>
-        </div>
-    </div>
 
-    <br />
+                <!-- Kuljettaja -->
+                <div class="col-md-5">
+                    <label class="form-label">Kuljettaja</label>
+                    <input class="form-control" @bind="Criteria.DriverName" />
+                </div>
 
-    <div class="container">
-        <div class="col-lg-4 col-md-5 col-sm-6">
-            <h3 class="title">Tulokset</h3>
-            <div class="grid text-nowrap">
-                <QuickGrid @ref="gridRef" ItemsProvider="SearchProvider">
-                    <PropertyColumn Property="p => p.RegNumber" Title="Rekisterinumero"></PropertyColumn>
-                    <PropertyColumn Property="p => p.DriverName" Title="Kuljettaja"></PropertyColumn>
-                    <PropertyColumn Property="p => p.Company" Title="Yritys"></PropertyColumn>
-                    <PropertyColumn Property="p => p.Date" Title="Päivämäärä"></PropertyColumn>
-                    <PropertyColumn Property="p => p.EntryTime" Title="Sisään"></PropertyColumn>
-                    <PropertyColumn Property="p => p.ExitTime" Title="Ulos"></PropertyColumn>
-                    <PropertyColumn Property="p => p.Reason" Title="Syy"></PropertyColumn>
-                    <PropertyColumn Property="p => p.ExpandedReason" Title="Lisätiedot"></PropertyColumn>
-                    <PropertyColumn Property="p => p.LocationName" Title="Paikkakunta"></PropertyColumn>
-                </QuickGrid>
+                <!-- Aloitus päivä -->
+                <div class="col-md-3">
+                    <label class="form-label">Aloitus päivä</label>
+                    <input type="date"
+                           class="form-control"
+                           @bind="Criteria.StartDate" />
+                </div>
+                <!-- Aloitus aika -->
+                <div class="col-md-2">
+                    <label class="form-label">Klo</label>
+                    <input type="time"
+                           class="form-control"
+                           @bind="Criteria.StartTime" />
+                </div>
+
+                <!-- Päättyy päivä -->
+                <div class="col-md-3">
+                    <label class="form-label">Päättyy</label>
+                    <input type="date"
+                           class="form-control"
+                           @bind="Criteria.EndDate" />
+                </div>
+                <!-- Päättyy aika -->
+                <div class="col-md-2">
+                    <label class="form-label">Klo</label>
+                    <input type="time"
+                           class="form-control"
+                           @bind="Criteria.EndTime" />
+                </div>
+
+                <!-- Paikkakunta -->
+                <div class="col-md-4">
+                    <label class="form-label">Paikkakunta</label>
+                    <select class="form-select"
+                            @bind="Criteria.LocationId">
+                        <option value="0">-- Valitse --</option>
+                        @foreach (var loc in Locations)
+                        {
+                            <option value="@loc.LocationId">
+                                @loc.LocationName
+                            </option>
+                        }
+                    </select>
+                </div>
             </div>
-        </div>
+
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Hae</button>
+            </div>
+        </EditForm>
     </div>
 
-
-
+    <div class="container">
+        <h3 class="title">Tulokset</h3>
+        <QuickGrid @ref="gridRef"
+                   ItemsProvider="DataProvider">
+            <PropertyColumn Property="p => p.RegNumber" Title="Rekisterinumero" />
+            <PropertyColumn Property="p => p.DriverName" Title="Kuljettaja" />
+            <PropertyColumn Property="p => p.Company" Title="Yritys" />
+            <PropertyColumn Property="p => p.Date" Title="Päivämäärä" />
+            <PropertyColumn Property="p => p.EntryTime" Title="Sisään" />
+            <PropertyColumn Property="p => p.ExitTime" Title="Ulos" />
+            <PropertyColumn Property="p => p.Reason" Title="Syy" />
+            <PropertyColumn Property="p => p.ExpandedReason" Title="Lisätiedot" />
+            <PropertyColumn Property="p => p.LocationName" Title="Paikkakunta" />
+        </QuickGrid>
+    </div>
 }
 
 @code {
-    GridItemsProvider<TrafficdataDto>? DataProvider;
-    private TrafficdataDto ProvidedData = new();
-    private List<LocationDto>? Locations = new();
-    //private List<TrafficdataDto>? trafficData;
+    // dedicated criteria class (not named "Search")
+    private class SearchCriteria
+    {
+        public string? RegNumber { get; set; }
+        public string? Company { get; set; }
+        public string? DriverName { get; set; }
+        public DateOnly? StartDate { get; set; }
+        public TimeOnly? StartTime { get; set; }
+        public DateOnly? EndDate { get; set; }
+        public TimeOnly? EndTime { get; set; }
+        public int LocationId { get; set; }
+    }
+
+    private SearchCriteria Criteria = new();
     private QuickGrid<TrafficdataDto>? gridRef;
-
-
+    private GridItemsProvider<TrafficdataDto>? DataProvider;
+    private List<LocationDto>? Locations;
+    private bool _hasSearched;
 
     protected override async Task OnInitializedAsync()
     {
-        DataProvider = async (request) =>
-        {
-            var allData = await Http.GetFromJsonAsync<List<TrafficdataDto>>("/trafficdata")
-                           ?? new List<TrafficdataDto>();
+        // load location dropdown
+        Locations = await Http.GetFromJsonAsync<List<LocationDto>>("/locations");
 
-            var items = allData
-                .Skip(request.StartIndex)
-                .Take(request.Count ?? allData.Count)
-                .ToList();
+        // set up server‑filtered & paged provider
+        DataProvider = new GridItemsProvider<TrafficdataDto>(async request =>
+        {
+            // don't load anything until the user clicks "Hae"
+            if (!_hasSearched)
+                return new GridItemsProviderResult<TrafficdataDto>
+                    {
+                        Items = new List<TrafficdataDto>(),
+                        TotalItemCount = 0
+                    };
+
+            var qs = new Dictionary<string, object?>();
+
+            if (!string.IsNullOrWhiteSpace(Criteria.RegNumber))
+                qs["regNumber"] = Criteria.RegNumber;
+            if (!string.IsNullOrWhiteSpace(Criteria.Company))
+                qs["company"] = Criteria.Company;
+            if (!string.IsNullOrWhiteSpace(Criteria.DriverName))
+                qs["driverName"] = Criteria.DriverName;
+
+            if (Criteria.StartDate.HasValue)
+            {
+                var dt = Criteria.StartDate.Value
+                           .ToDateTime(Criteria.StartTime ?? TimeOnly.MinValue);
+                qs["start"] = dt.ToString("o");
+            }
+
+            if (Criteria.EndDate.HasValue)
+            {
+                var dt = Criteria.EndDate.Value
+                           .ToDateTime(Criteria.EndTime ?? TimeOnly.MaxValue);
+                qs["end"] = dt.ToString("o");
+            }
+
+            if (Criteria.LocationId != 0)
+                qs["locationId"] = Criteria.LocationId;
+
+            // server‑side paging
+            qs["skip"] = request.StartIndex;
+            qs["take"] = request.Count ?? 50;
+
+            var uri = NavManager.GetUriWithQueryParameters("/trafficdata/search", qs);
+            var result = await Http.GetFromJsonAsync<SearchResult>(uri);
 
             return new GridItemsProviderResult<TrafficdataDto>
                 {
-                    Items = items,
-                    TotalItemCount = allData.Count
+                    Items = result?.Items ?? new(),
+                    TotalItemCount = result?.TotalCount ?? 0
                 };
-        };
-        Locations = await Http.GetFromJsonAsync<List<LocationDto>>("/locations");
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            SetCurrentDateTime();
-
-            StateHasChanged();
-        }
+        });
     }
 
     private async Task OnValidSubmit()
     {
-
-
+        _hasSearched = true;
+        if (gridRef is not null)
+            await gridRef.RefreshDataAsync();
     }
 
-    private void Departed(TrafficdataDto TrafficEntry)
-    {
-        //NavManager.NavigateTo();
-    }
-
-    private void DeleteEntry(TrafficdataDto TrafficEntry)
-    {
-        //NavManager.NavigateTo();
-    }
-
-    private void SetCurrentDateTime()
-    {
-        var now = DateTime.Now;
-        ProvidedData.Date = DateOnly.FromDateTime(now);
-        ProvidedData.EntryTime = TimeOnly.FromDateTime(now);
-        ProvidedData.SearchEndDate = DateOnly.FromDateTime(now);
-        ProvidedData.SearchEndTime = TimeOnly.FromDateTime(now);
-    }
-
+    private record SearchResult(List<TrafficdataDto> Items, int TotalCount);
 }

@@ -58,15 +58,12 @@ public static class TrafficdataEndpoints
         });
 
         // Hake liikenne tiedot hakuehdoilla
-
         app.MapGet("/trafficdata/search", async (
                 [FromQuery] string? regNumber,
                 [FromQuery] string? driverName,
                 [FromQuery] string? company,
-                [FromQuery] DateOnly? startDate,
-                [FromQuery] TimeOnly? startTime,
-                [FromQuery] DateOnly? endDate,
-                [FromQuery] TimeOnly? endTime,
+                [FromQuery] DateTime? start,      // combined ISO date+time
+                [FromQuery] DateTime? end,        // combined ISO date+time
                 [FromQuery] int? locationId,
                 [FromQuery] int skip,
                 [FromQuery] int take,
@@ -83,38 +80,34 @@ public static class TrafficdataEndpoints
             if (!string.IsNullOrWhiteSpace(company))
                 q = q.Where(t => t.Company!.Contains(company));
 
-            // ——> START filter: date+time without ToTimeSpan()
-            if (startDate.HasValue)
+            // BETWEEN filter on Date + EntryTime
+            if (start.HasValue || end.HasValue)
             {
-                if (startTime.HasValue)
-                {
-                    // either strictly after the start date,
-                    // or on the start date with EntryTime >= startTime
-                    q = q.Where(t =>
-                        t.Date > startDate.Value ||
-                        (t.Date == startDate.Value && t.EntryTime! >= startTime.Value));
-                }
-                else
-                {
-                    q = q.Where(t => t.Date >= startDate.Value);
-                }
-            }
+                var startDate = start.HasValue
+                    ? DateOnly.FromDateTime(start.Value)
+                    : DateOnly.MinValue;
+                var startTime = start.HasValue
+                    ? TimeOnly.FromDateTime(start.Value)
+                    : TimeOnly.MinValue;
 
-            // ——> END filter: date+time without ToTimeSpan()
-            if (endDate.HasValue)
-            {
-                if (endTime.HasValue)
-                {
-                    // either strictly before the end date,
-                    // or on the end date with EntryTime <= endTime
-                    q = q.Where(t =>
-                        t.Date < endDate.Value ||
-                        (t.Date == endDate.Value && t.EntryTime! <= endTime.Value));
-                }
-                else
-                {
-                    q = q.Where(t => t.Date <= endDate.Value);
-                }
+                var endDate = end.HasValue
+                    ? DateOnly.FromDateTime(end.Value)
+                    : DateOnly.MaxValue;
+                var endTime = end.HasValue
+                    ? TimeOnly.FromDateTime(end.Value)
+                    : TimeOnly.MaxValue;
+
+                q = q.Where(t =>
+                    (
+                        t.Date > startDate
+                        || (t.Date == startDate && t.EntryTime! >= startTime)
+                    )
+                    &&
+                    (
+                        t.Date < endDate
+                        || (t.Date == endDate && t.EntryTime! <= endTime)
+                    )
+                );
             }
 
             if (locationId.HasValue && locationId.Value != 0)
@@ -123,7 +116,8 @@ public static class TrafficdataEndpoints
             var total = await q.CountAsync();
 
             var page = await q
-                .OrderByDescending(t => t.Date).ThenBy(t => t.EntryTime)
+                .OrderByDescending(t => t.Date)
+                .ThenBy(t => t.EntryTime)
                 .Skip(skip)
                 .Take(take)
                 .Select(t => new TrafficdataDto
