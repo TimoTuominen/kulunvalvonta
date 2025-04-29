@@ -19,5 +19,6 @@ builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAuthenticationStateDeserialization();
 builder.Services.AddBlazoredLocalStorage();
+builder.Services.AddBlazorBootstrap();
 
 await builder.Build().RunAsync();

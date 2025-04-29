@@ -55,6 +55,9 @@ builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
+// Blazor palvelut
+builder.Services.AddBlazorBootstrap();
+
 //  Lisää Blazor palvelut
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
