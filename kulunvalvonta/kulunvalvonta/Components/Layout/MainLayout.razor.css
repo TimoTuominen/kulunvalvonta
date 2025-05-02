@@ -98,8 +98,8 @@ main {
     }
 
 .logo {
-/*    max-height: 60px;
-    max-width: 60px;*/
+    max-height: 5rem;
+ /*   max-width: 40px;*/
     display: block;
     /* margin-right: auto;*/
 }
@@ -107,14 +107,17 @@ main {
 .main-menu-container {
     display: flex;
     margin-left: auto;
+    padding: 25px;
 }
 .main-menu_headline {
-    color: black;
+    color: white;
     text-decoration: none;
-    padding: 5px;
+    padding: 20px;
     margin-right: auto;
+    margin-left: 20px;
     font-style: italic;
-    font-family: Fantasy, Copperplate;
+    font-family: Tahoma, sans-serif;
+    /*src: url("/fonts/Copperplate.woff2") format("woff2"), url("/fonts/Copperplate.woff") format("woff");*/
 }
 
 .logo-link {
@@ -127,3 +130,23 @@ main {
         text-decoration: none;
         color: black;
     }
+
+
+.dropdown-menu {
+    position: absolute;
+    overflow: hidden;
+}
+
+
+.dropdown-item:hover {
+    /*background-color: lightblue;*/
+    /* color: #333; */
+    overflow: hidden;
+}
+
+
+.dropdown-toggle {
+    white-space: nowrap;
+    background-color: #0f7ec3
+}
+

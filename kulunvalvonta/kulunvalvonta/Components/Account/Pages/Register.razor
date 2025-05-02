@@ -5,6 +5,7 @@
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.EntityFrameworkCore
 @using kulunvalvonta.Data
 
 @inject UserManager<ApplicationUser> UserManager
@@ -14,6 +15,7 @@
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject RoleManager<IdentityRole> RoleManager
 
 <PageTitle>Tilin luonti</PageTitle>
 
@@ -24,38 +26,54 @@
         <StatusMessage Message="@Message" />
         <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
             <DataAnnotationsValidator />
-            @* <h2>Luo uusi tili.</h2> *@
             <hr />
             <ValidationSummary class="text-danger" role="alert" />
+
             <div class="form-floating mb-3">
                 <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="nimi@esimerkki.com" />
                 <label for="Input.Email">Sähköposti</label>
                 <ValidationMessage For="() => Input.Email" class="text-danger" />
             </div>
+
             <div class="form-floating mb-3">
                 <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="salasana" />
                 <label for="Input.Password">Salasana</label>
                 <ValidationMessage For="() => Input.Password" class="text-danger" />
             </div>
+
             <div class="form-floating mb-3">
                 <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="salasana" />
                 <label for="Input.ConfirmPassword">Varmista Salasana</label>
                 <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
             </div>
+
+            <div class="form-floating mb-3">
+                <InputSelect @bind-Value="Input.SelectedRole" id="Input.SelectedRole" class="form-select">
+                    <option value="">-- Valitse rooli --</option>
+                    @foreach (var role in Roles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </InputSelect>
+                <label for="Input.SelectedRole">Rooli</label>
+                <ValidationMessage For="() => Input.SelectedRole" class="text-danger" />
+            </div>
+
             <button type="submit" class="w-100 btn btn-lg btn-primary">Luo tili</button>
         </EditForm>
     </div>
-@*     <div class="col-lg-4 col-lg-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
-    </div> *@
 </div>
 
 @code {
     private IEnumerable<IdentityError>? identityErrors;
+    private List<string> Roles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Roles = await RoleManager.Roles
+                                 .Select(r => r.Name!)
+                                 .ToListAsync();
+    }
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
@@ -63,7 +81,9 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+    private string? Message => identityErrors is null
+        ? null
+        : $"Error: {string.Join(", ", identityErrors.Select(e => e.Description))}";
 
     public async Task RegisterUser(EditContext editContext)
     {
@@ -78,6 +98,16 @@
         {
             identityErrors = result.Errors;
             return;
+        }
+
+        if (!string.IsNullOrEmpty(Input.SelectedRole))
+        {
+            var addRoleResult = await UserManager.AddToRoleAsync(user, Input.SelectedRole);
+            if (!addRoleResult.Succeeded)
+            {
+                identityErrors = addRoleResult.Errors;
+                return;
+            }
         }
 
         Logger.LogInformation("User created a new account with password.");
@@ -96,6 +126,7 @@
             RedirectManager.RedirectTo(
                 "Account/RegisterConfirmation",
                 new() { ["email"] = Input.Email, ["returnUrl"] = ReturnUrl });
+            return;
         }
 
         await SignInManager.SignInAsync(user, isPersistent: false);
@@ -110,8 +141,7 @@
         }
         catch
         {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
+            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
         }
     }
 
@@ -129,17 +159,20 @@
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]
-        public string Email { get; set; } = "";
+        public string Email { get; set; } = string.Empty;
 
         [Required]
         [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
-        public string Password { get; set; } = "";
+        public string Password { get; set; } = string.Empty;
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-        public string ConfirmPassword { get; set; } = "";
+        public string ConfirmPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Valitse rooli")]
+        public string SelectedRole { get; set; } = string.Empty;
     }
 }

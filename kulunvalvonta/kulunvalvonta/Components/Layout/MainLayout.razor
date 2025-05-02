@@ -1,18 +1,14 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.Components.Authorization
-@* @using Kulunvalvonta.
- *@
+
 <div class="page">
-@*     <div class="sidebar">
-        <NavMenu />
-    </div>
- *@
+
     <main>
         <div class="top-row px-4">
 
             <img src="/Images/Orion-Oyj-Logo.svg" alt="Orion Logo" class="logo" />
-            <h1 class="main-menu_headline" >Ajoneuvoseuranta</h1>
+            <h1 class="main-menu_headline">Ajoneuvoseuranta</h1>
 
             <div class="main-menu-container">
 
@@ -33,8 +29,8 @@
                             </NavLink>
                         </li>
                         <li>
-                            <NavLink class="dropdown-item" href="adminpanel">
-                                <span class="bi bi-list-nested"></span> Käyttäjien hallinta
+                            <NavLink class="dropdown-item" href="Admin/Users">
+                                <span class="bi bi-list-nested"></span> Käyttäjienhallinta
                             </NavLink>
                         </li>
 
