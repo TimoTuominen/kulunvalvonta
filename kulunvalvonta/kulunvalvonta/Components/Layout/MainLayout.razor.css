@@ -104,6 +104,13 @@ main {
     /* margin-right: auto;*/
 }
 
+.logo-link {
+    max-height: 5rem;
+    /*   max-width: 40px;*/
+    display: block;
+    /* margin-right: auto;*/
+}
+
 .main-menu-container {
     display: flex;
     margin-left: auto;

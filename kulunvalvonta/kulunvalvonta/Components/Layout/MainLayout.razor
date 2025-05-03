@@ -7,9 +7,11 @@
     <main>
         <div class="top-row px-4">
 
+             
             <img src="/Images/Orion-Oyj-Logo.svg" alt="Orion Logo" class="logo" />
+            <NavLink href="/" class="logo-link">
             <h1 class="main-menu_headline">Ajoneuvoseuranta</h1>
-
+            </NavLink>
             <div class="main-menu-container">
 
                 <div class="dropdown">
@@ -24,12 +26,12 @@
                             </NavLink>
                         </li>
                         <li>
-                            <NavLink class="dropdown-item" href="search">
+                            <NavLink class="dropdown-item" href="/search">
                                 <span class="bi bi-list-nested"></span> Haku
                             </NavLink>
                         </li>
                         <li>
-                            <NavLink class="dropdown-item" href="Admin/Users">
+                            <NavLink class="dropdown-item" href="/Admin/Users">
                                 <span class="bi bi-list-nested"></span> Käyttäjienhallinta
                             </NavLink>
                         </li>
@@ -37,7 +39,7 @@
                         <AuthorizeView>
                             <Authorized>
                                 <li>
-                                    <NavLink class="dropdown-item" href="Account/Manage">
+                                    <NavLink class="dropdown-item" href="/Account/Manage">
                                         <span class="bi bi-person-fill"></span>
                                         @context.User.Identity?.Name
                                     </NavLink>
@@ -71,8 +73,6 @@
 
                     </ul>
                 </div>
-
-          @*   <p class="main-menu-paragraph"><MainMenuDropdown /></p> *@
             </div>
         </div>
 
