@@ -2,6 +2,7 @@ using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Blazored.LocalStorage;
 using System.Globalization;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -15,6 +16,18 @@ builder.Services.AddScoped(sp => new HttpClient
 {
     BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
 });
+
+//builder.Services.AddScoped(sp =>
+//    new HttpClient(new WebAssemblyHttpMessageHandler
+//    {
+//        // tell the browser to include same-site & cross-site cookies
+//        Credentials = FetchCredentialsOption.Include
+//    })
+//    {
+//        BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
+//    });
+
+
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAuthenticationStateDeserialization();

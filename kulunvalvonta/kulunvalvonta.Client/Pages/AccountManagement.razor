@@ -1,0 +1,118 @@
+﻿@page "/admin/users"
+@rendermode InteractiveWebAssembly
+@using System.Net
+@using System.Net.Http
+@using System.Net.Http.Json
+@using System.Linq
+@using Kulunvalvonta.Shared
+@using Microsoft.AspNetCore.Components.QuickGrid
+
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+<PageTitle>Käyttäjät</PageTitle>
+
+<h1>Käyttäjät</h1>
+
+@if (loadError is not null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else if (!loaded)
+{
+    <p><em>Ladataan...</em></p>
+}
+else
+{
+    <QuickGrid TItem="UserDto"
+               Items="@users.AsQueryable()"
+               Sortable="true"
+               ColumnsResizable="true">
+        <Columns>
+            <PropertyColumn TGridItem="UserDto" TProp="string"
+                            Property="u => u.Email"
+                            Title="Sähköposti" />
+
+            <TemplateColumn TGridItem="UserDto" Title="Roolit">
+                @string.Join(", ", context.Roles)
+            </TemplateColumn>
+
+            <TemplateColumn TGridItem="UserDto" Title="Toiminnot">
+                <button class="btn btn-sm btn-danger"
+                        @onclick="() => ConfirmAndDelete(context.Id, context.Email)">
+                    Poista
+                </button>
+            </TemplateColumn>
+        </Columns>
+    </QuickGrid>
+}
+
+@code {
+    private List<UserDto> users = new();
+    private string? loadError;
+    private bool loaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        loadError = null;
+        loaded = false;
+
+        try
+        {
+            // 1) Request the list
+            var response = await Http.GetAsync("/api/admin/users");
+
+            if (response.IsSuccessStatusCode)
+            {
+                // 2) Read JSON only on success
+                users = await response.Content.ReadFromJsonAsync<List<UserDto>>()
+                        ?? new List<UserDto>();
+                loaded = true;
+            }
+            else if (response.StatusCode == HttpStatusCode.Unauthorized
+                  || response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                // 3) If the API told us we’re not allowed, go login
+                NavigationManager.NavigateTo("authentication/login");
+                return;
+            }
+            else
+            {
+                // 4) Anything else: show the raw body
+                var text = await response.Content.ReadAsStringAsync();
+                loadError = $"Virhe haettaessa käyttäjiä: {(int)response.StatusCode} – {text}";
+            }
+        }
+        catch (Exception ex)
+        {
+            loadError = ex.Message;
+        }
+    }
+
+    private async Task ConfirmAndDelete(string id, string email)
+    {
+        var ok = await JSRuntime.InvokeAsync<bool>(
+            "confirm",
+            $"Oletko varma, että haluat poistaa käyttäjän {email}?"
+        );
+        if (!ok) return;
+
+        var resp = await Http.DeleteAsync($"/api/admin/users/{id}");
+        if (resp.IsSuccessStatusCode)
+        {
+            users.RemoveAll(u => u.Id == id);
+            StateHasChanged();
+        }
+        else
+        {
+            var err = await resp.Content.ReadAsStringAsync();
+            loadError = $"Poisto epäonnistui: {(int)resp.StatusCode} – {err}";
+        }
+    }
+}

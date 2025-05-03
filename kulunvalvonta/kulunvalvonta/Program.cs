@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Builder;
 using Blazored.LocalStorage;
 using System.Globalization;
+using kulunvalvonta.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -117,6 +118,7 @@ app.MapRazorComponents<App>()
 
 app.MapAdditionalIdentityEndpoints();
 app.MapTrafficdataEndpoints();
+app.MapAdminEndpoints();
 
 app.Run();
 
