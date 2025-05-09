@@ -5,6 +5,7 @@ using kulunvalvonta.Data.Models;
 using kulunvalvonta.Data;
 using Kulunvalvonta.Shared;
 using Microsoft.AspNetCore.Mvc;
+using ClosedXML.Excel;
 
 public static class TrafficdataEndpoints
 {
@@ -40,8 +41,8 @@ public static class TrafficdataEndpoints
                 [FromQuery] string? regNumber,
                 [FromQuery] string? driverName,
                 [FromQuery] string? company,
-                [FromQuery] DateTime? start,      // combined ISO date+time
-                [FromQuery] DateTime? end,        // combined ISO date+time
+                [FromQuery] DateTime? start,      
+                [FromQuery] DateTime? end,        
                 [FromQuery] int? locationId,
                 [FromQuery] int skip,
                 [FromQuery] int take,
@@ -58,7 +59,7 @@ public static class TrafficdataEndpoints
             if (!string.IsNullOrWhiteSpace(company))
                 q = q.Where(t => t.Company!.Contains(company));
 
-            // BETWEEN filter on Date + EntryTime
+            
             if (start.HasValue || end.HasValue)
             {
                 var startDate = start.HasValue
@@ -194,6 +195,85 @@ public static class TrafficdataEndpoints
             var data = await db.Trafficdata.FindAsync(ulid);
             return data is not null ? Results.Ok(data) : Results.NotFound();
         });
+
+        // Tietojen exporttaaminen Exceliin
+
+        app.MapGet("/api/export/excel", async (
+            HttpContext context,
+            [FromQuery] string? regNumber,
+            [FromQuery] string? company,
+            [FromQuery] string? driverName,
+            [FromQuery] DateTime? start,
+            [FromQuery] DateTime? end,
+            [FromQuery] int? locationId,
+            ApplicationDbContext db) =>
+        {
+            var query = db.Trafficdata.Include(x => x.Location).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(regNumber))
+                query = query.Where(x => x.RegNumber == regNumber);
+
+            if (!string.IsNullOrWhiteSpace(company))
+                query = query.Where(x => x.Company == company);
+
+            if (!string.IsNullOrWhiteSpace(driverName))
+                query = query.Where(x => x.DriverName == driverName);
+
+            // ✅ Fix: Convert DateTime to DateOnly before comparing to x.Date
+            if (start.HasValue)
+            {
+                var startDate = DateOnly.FromDateTime(start.Value);
+                query = query.Where(x => x.Date >= startDate);
+            }
+
+            if (end.HasValue)
+            {
+                var endDate = DateOnly.FromDateTime(end.Value);
+                query = query.Where(x => x.Date <= endDate);
+            }
+
+            if (locationId.HasValue && locationId.Value != 0)
+                query = query.Where(x => x.LocationId == locationId.Value);
+
+            var results = await query.ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var ws = workbook.AddWorksheet("Results");
+
+            ws.Cell(1, 1).Value = "Rekisterinumero";
+            ws.Cell(1, 2).Value = "Kuljettaja";
+            ws.Cell(1, 3).Value = "Yritys";
+            ws.Cell(1, 4).Value = "Päivämäärä";
+            ws.Cell(1, 5).Value = "Sisään";
+            ws.Cell(1, 6).Value = "Ulos";
+            ws.Cell(1, 7).Value = "Syy";
+            ws.Cell(1, 8).Value = "Lisätiedot";
+            ws.Cell(1, 9).Value = "Paikkakunta";
+
+            for (int i = 0; i < results.Count; i++)
+            {
+                var row = i + 2;
+                var item = results[i];
+                ws.Cell(row, 1).Value = item.RegNumber;
+                ws.Cell(row, 2).Value = item.DriverName;
+                ws.Cell(row, 3).Value = item.Company;
+                ws.Cell(row, 4).Value = item.Date.ToString("yyyy-MM-dd");
+                ws.Cell(row, 5).Value = item.EntryTime?.ToString(@"HH\:mm");
+                ws.Cell(row, 6).Value = item.ExitTime?.ToString(@"HH\:mm");
+                ws.Cell(row, 7).Value = item.Reason?.ToString() ?? "";
+                ws.Cell(row, 8).Value = item.ExpandedReason;
+                ws.Cell(row, 9).Value = item.Location?.LocationName;
+            }
+
+            using var ms = new MemoryStream();
+            workbook.SaveAs(ms);
+            ms.Position = 0;
+
+            context.Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            context.Response.Headers.Append("Content-Disposition", "attachment; filename=results.xlsx");
+            await context.Response.BodyWriter.WriteAsync(ms.ToArray());
+        });
+
 
 
         // Hae sijainnit

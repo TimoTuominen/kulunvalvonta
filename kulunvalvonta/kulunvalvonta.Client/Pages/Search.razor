@@ -22,65 +22,48 @@ else
             <ValidationSummary />
 
             <div class="row g-3">
-                <!-- Rekisterinumero -->
                 <div class="col-md-2">
                     <label class="form-label">Rekisterinumero</label>
                     <input class="form-control" @bind="Criteria.RegNumber" />
                 </div>
 
-                <!-- Yritys -->
                 <div class="col-md-5">
                     <label class="form-label">Yritys</label>
                     <input class="form-control" @bind="Criteria.Company" />
                 </div>
 
-                <!-- Kuljettaja -->
                 <div class="col-md-5">
                     <label class="form-label">Kuljettaja</label>
                     <input class="form-control" @bind="Criteria.DriverName" />
                 </div>
 
-                <!-- Aloitus päivä -->
                 <div class="col-md-3">
                     <label class="form-label">Aloitus päivä</label>
-                    <input type="date"
-                           class="form-control"
-                           @bind="Criteria.StartDate" />
-                </div>
-                <!-- Aloitus aika -->
-                <div class="col-md-2">
-                    <label class="form-label">Klo</label>
-                    <input type="time"
-                           class="form-control"
-                           @bind="Criteria.StartTime" />
+                    <input type="date" class="form-control" @bind="Criteria.StartDate" />
                 </div>
 
-                <!-- Päättyy päivä -->
+                <div class="col-md-2">
+                    <label class="form-label">Klo</label>
+                    <input type="time" class="form-control" @bind="Criteria.StartTime" />
+                </div>
+
                 <div class="col-md-3">
                     <label class="form-label">Päättyy</label>
-                    <input type="date"
-                           class="form-control"
-                           @bind="Criteria.EndDate" />
-                </div>
-                <!-- Päättyy aika -->
-                <div class="col-md-2">
-                    <label class="form-label">Klo</label>
-                    <input type="time"
-                           class="form-control"
-                           @bind="Criteria.EndTime" />
+                    <input type="date" class="form-control" @bind="Criteria.EndDate" />
                 </div>
 
-                <!-- Paikkakunta -->
+                <div class="col-md-2">
+                    <label class="form-label">Klo</label>
+                    <input type="time" class="form-control" @bind="Criteria.EndTime" />
+                </div>
+
                 <div class="col-md-4">
                     <label class="form-label">Paikkakunta</label>
-                    <select class="form-select"
-                            @bind="Criteria.LocationId">
+                    <select class="form-select" @bind="Criteria.LocationId">
                         <option value="0">-- Valitse --</option>
                         @foreach (var loc in Locations)
                         {
-                            <option value="@loc.LocationId">
-                                @loc.LocationName
-                            </option>
+                            <option value="@loc.LocationId">@loc.LocationName</option>
                         }
                     </select>
                 </div>
@@ -94,6 +77,14 @@ else
 
     <div class="container">
         <h3 class="title">Tulokset</h3>
+
+        @if (_hasSearched)
+        {
+            <a class="btn btn-success mb-3" href="@GetDownloadUrl()" download>
+                Lataa Excel
+            </a>
+        }
+
         <QuickGrid @ref="gridRef"
                    ItemsProvider="DataProvider">
             <PropertyColumn Property="p => p.RegNumber" Title="Rekisterinumero" />
@@ -110,7 +101,6 @@ else
 }
 
 @code {
-    // dedicated criteria class (not named "Search")
     private class SearchCriteria
     {
         public string? RegNumber { get; set; }
@@ -131,17 +121,14 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // load location dropdown
         Locations = await Http.GetFromJsonAsync<List<LocationDto>>("/locations");
 
-        // set up server‑filtered & paged provider
         DataProvider = new GridItemsProvider<TrafficdataDto>(async request =>
         {
-            // don't load anything until the user clicks "Hae"
             if (!_hasSearched)
                 return new GridItemsProviderResult<TrafficdataDto>
                     {
-                        Items = new List<TrafficdataDto>(),
+                        Items = [],
                         TotalItemCount = 0
                     };
 
@@ -157,21 +144,20 @@ else
             if (Criteria.StartDate.HasValue)
             {
                 var dt = Criteria.StartDate.Value
-                           .ToDateTime(Criteria.StartTime ?? TimeOnly.MinValue);
+                    .ToDateTime(Criteria.StartTime ?? TimeOnly.MinValue);
                 qs["start"] = dt.ToString("o");
             }
 
             if (Criteria.EndDate.HasValue)
             {
                 var dt = Criteria.EndDate.Value
-                           .ToDateTime(Criteria.EndTime ?? TimeOnly.MaxValue);
+                    .ToDateTime(Criteria.EndTime ?? TimeOnly.MaxValue);
                 qs["end"] = dt.ToString("o");
             }
 
             if (Criteria.LocationId != 0)
                 qs["locationId"] = Criteria.LocationId;
 
-            // server‑side paging
             qs["skip"] = request.StartIndex;
             qs["take"] = request.Count ?? 50;
 
@@ -180,7 +166,7 @@ else
 
             return new GridItemsProviderResult<TrafficdataDto>
                 {
-                    Items = result?.Items ?? new(),
+                    Items = result?.Items ?? [],
                     TotalItemCount = result?.TotalCount ?? 0
                 };
         });
@@ -193,5 +179,37 @@ else
             await gridRef.RefreshDataAsync();
     }
 
+    private string GetDownloadUrl()
+    {
+        var qs = new Dictionary<string, object?>();
+
+        if (!string.IsNullOrWhiteSpace(Criteria.RegNumber))
+            qs["regNumber"] = Criteria.RegNumber;
+        if (!string.IsNullOrWhiteSpace(Criteria.Company))
+            qs["company"] = Criteria.Company;
+        if (!string.IsNullOrWhiteSpace(Criteria.DriverName))
+            qs["driverName"] = Criteria.DriverName;
+
+        if (Criteria.StartDate.HasValue)
+        {
+            var dt = Criteria.StartDate.Value
+                .ToDateTime(Criteria.StartTime ?? TimeOnly.MinValue);
+            qs["start"] = dt.ToString("o");
+        }
+
+        if (Criteria.EndDate.HasValue)
+        {
+            var dt = Criteria.EndDate.Value
+                .ToDateTime(Criteria.EndTime ?? TimeOnly.MaxValue);
+            qs["end"] = dt.ToString("o");
+        }
+
+        if (Criteria.LocationId != 0)
+            qs["locationId"] = Criteria.LocationId;
+
+        return NavManager.GetUriWithQueryParameters("/api/export/excel", qs);
+    }
+
     private record SearchResult(List<TrafficdataDto> Items, int TotalCount);
 }
+
