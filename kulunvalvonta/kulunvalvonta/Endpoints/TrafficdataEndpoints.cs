@@ -219,7 +219,7 @@ public static class TrafficdataEndpoints
             if (!string.IsNullOrWhiteSpace(driverName))
                 query = query.Where(x => x.DriverName == driverName);
 
-            // ✅ Fix: Convert DateTime to DateOnly before comparing to x.Date
+            // Muuta hakuehdot DateOnly ja TimeOnly muotoon
             if (start.HasValue)
             {
                 var startDate = DateOnly.FromDateTime(start.Value);
