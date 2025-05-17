@@ -47,15 +47,21 @@
 
                                 <li>
                                     <form action="Account/Logout" method="post" class="px-3">
-                                        <input name="ReturnUrl"
-                                               type="hidden"
-                                               value="@currentUrl" />
+                                        <AntiforgeryToken />
+                                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
                                         <button type="submit" class="dropdown-item btn btn-link">
                                             <span class="bi bi-arrow-bar-left"></span> Logout
                                         </button>
                                     </form>
                                 </li>
 
+@* 
+                                <AntiforgeryToken />
+                                <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                                <button type="submit" class="nav-link">
+                                    <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                                </button>
+ *@
                             </Authorized>
                             <NotAuthorized>
                                 <li>

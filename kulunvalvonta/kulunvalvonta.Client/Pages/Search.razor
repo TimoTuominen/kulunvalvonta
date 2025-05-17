@@ -1,6 +1,9 @@
 ﻿@page "/search"
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using Kulunvalvonta.Shared
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
 @rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavManager
