@@ -65,12 +65,12 @@ else
 
         try
         {
-            // 1) Request the list
+            // Pyydä listaus
             var response = await Http.GetAsync("/api/admin/users");
 
             if (response.IsSuccessStatusCode)
             {
-                // 2) Read JSON only on success
+                // Jos haku onnistui, lue JSON
                 users = await response.Content.ReadFromJsonAsync<List<UserDto>>()
                         ?? new List<UserDto>();
                 loaded = true;
@@ -78,13 +78,13 @@ else
             else if (response.StatusCode == HttpStatusCode.Unauthorized
                   || response.StatusCode == HttpStatusCode.Forbidden)
             {
-                // 3) If the API told us we’re not allowed, go login
+                // Jos käyttäjä ei ole loggautunut sisään, siirry loggautumiseen
                 NavigationManager.NavigateTo("authentication/login");
                 return;
             }
             else
             {
-                // 4) Anything else: show the raw body
+                
                 var text = await response.Content.ReadAsStringAsync();
                 loadError = $"Virhe haettaessa käyttäjiä: {(int)response.StatusCode} – {text}";
             }
