@@ -144,9 +144,14 @@ else
     GridItemsProvider<TrafficdataDto>? DataProvider;
     private TrafficdataDto ProvidedData = new();
     private List<LocationDto>? Locations = new ();
-    private bool _hasLoadedFromStorage;
-    private bool _didInitDateTime;
-    //private List<TrafficdataDto>? trafficData;
+
+
+    private class PreviousEntry
+    {
+        public string? Company { get; set; }
+        public string? DriverName { get; set; }
+    }
+
 
     private int? SelectedReasonInt
     {
@@ -203,9 +208,6 @@ else
 
             SetCurrentDateTime();
 
-            _hasLoadedFromStorage = true;
-            _didInitDateTime = true;
-
             StateHasChanged();
         }
     }
@@ -232,24 +234,24 @@ else
                     LocationId = lastLocationId
                 };
 
-            // 1) Tyhjennetään lomake:
+            // Tyhjennetään lomake:
             StateHasChanged();
 
-            // 2) Päivitetään Gridin tiedot
+            // Päivitetään Gridin tiedot
             if (gridRef is not null)
                 await gridRef.RefreshDataAsync();
         }
         else
         {
-            Console.Error.WriteLine("Error saving the data.");
+            Console.Error.WriteLine("Virhe tietoja tallennettaessa.");
         }
     }
 
     private async Task Departed(TrafficdataDto entry)
     {
-        // (optional) confirm
+       
         if (!await JsRuntime.InvokeAsync<bool>(
-                "confirm",
+                "Vahvista",
                 $"Merkataan poistuneeksi {entry.RegNumber} ({entry.Date:d})?"))
             return;
 
@@ -268,22 +270,22 @@ else
 
     private async Task DeleteEntry(TrafficdataDto entry)
     {
-        // (Optional) add a confirmation
+        
         if (!await JsRuntime.InvokeAsync<bool>(
-                "confirm",
-                $"Are you sure you want to delete entry {entry.RegNumber} on {entry.Date:d}?"))
+                "Vahvista",
+                $"Oletko varma että haluat poistaa merkinnän {entry.RegNumber} päivältä {entry.Date:d}?"))
             return;
 
         var response = await Http.DeleteAsync($"/trafficdata/{entry.Id}");
         if (response.IsSuccessStatusCode)
         {
-            // Refresh the QuickGrid
+            // Päivitä gridin tiedot
             if (gridRef is not null)
                 await gridRef.RefreshDataAsync();
         }
         else
         {
-            Console.Error.WriteLine($"Error deleting entry: {response.StatusCode}");
+            Console.Error.WriteLine($"Virhe tietoja poistettaessa: {response.StatusCode}");
         }
     }
 
@@ -294,11 +296,42 @@ else
         ProvidedData.EntryTime = TimeOnly.FromDateTime(now);
     }
 
-    private void OnRegNumberInput(ChangeEventArgs e)
+    private async void OnRegNumberInput(ChangeEventArgs e)
     {
-        ProvidedData.RegNumber = (e.Value?.ToString() ?? string.Empty)
-                                    .ToUpperInvariant();
-        StateHasChanged();
+        ProvidedData.RegNumber = (e.Value?.ToString() ?? string.Empty).ToUpperInvariant();
+
+        if (ProvidedData.RegNumber.Length >= 6)
+        {
+            try
+            {
+                var response = await Http.GetAsync($"/trafficdata/latestbyreg?regNumber={ProvidedData.RegNumber}");
+
+                if (response.IsSuccessStatusCode && response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<PreviousEntry>();
+
+                    if (result is not null)
+                    {
+                        ProvidedData.Company = result.Company;
+                        ProvidedData.DriverName = result.DriverName;
+                        StateHasChanged();
+                    }
+                }
+                else
+                {
+                    // Ei aiempaa tietoa – tyhjennetään kentät (valinnainen)
+                    ProvidedData.Company = string.Empty;
+                    ProvidedData.DriverName = string.Empty;
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Hiljainen epäonnistuminen, ei ilmoitusta käyttäjälle
+                Console.Error.WriteLine($"Automaattitäyttö epäonnistui: {ex.Message}");
+            }
+        }
     }
+
 
 }

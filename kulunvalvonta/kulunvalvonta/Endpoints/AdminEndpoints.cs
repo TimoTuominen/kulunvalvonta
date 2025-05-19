@@ -14,7 +14,7 @@ namespace kulunvalvonta.Endpoints
     {
         public static IEndpointRouteBuilder MapAdminEndpoints(this IEndpointRouteBuilder app)
         {
-            // Vaadi Admib rooli kaikille reiteille
+            // Vaadi Admin rooli kaikille reiteille
             var admin = app
                 .MapGroup("/api/admin")
                 .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" });

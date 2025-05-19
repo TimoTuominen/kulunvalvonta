@@ -1,6 +1,5 @@
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Blazored.LocalStorage;
 using System.Globalization;
 using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
@@ -16,6 +15,7 @@ builder.Services.AddScoped(sp => new HttpClient
 {
     BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
 });
+
 
 //builder.Services.AddScoped(sp =>
 //    new HttpClient(new WebAssemblyHttpMessageHandler

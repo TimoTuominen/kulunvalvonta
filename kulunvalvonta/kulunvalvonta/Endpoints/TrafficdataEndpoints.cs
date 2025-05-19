@@ -12,6 +12,7 @@ public static class TrafficdataEndpoints
     public static IEndpointRouteBuilder MapTrafficdataEndpoints(this IEndpointRouteBuilder app)
     {
 
+        // Hae kaikki liikennetiedot joihin ei ole merkattu poistumisaikaa
         app.MapGet("/trafficdata", async (ApplicationDbContext db) =>
         {
             var open = await db.Trafficdata
@@ -36,7 +37,7 @@ public static class TrafficdataEndpoints
             return Results.Ok(open);
         });
 
-        // Hake liikenne tiedot hakuehdoilla
+        // Hae liikennetiedot hakuehdoilla
         app.MapGet("/trafficdata/search", async (
                 [FromQuery] string? regNumber,
                 [FromQuery] string? driverName,
@@ -120,7 +121,32 @@ public static class TrafficdataEndpoints
                 Items = page,
                 TotalCount = total
             });
-        });
+        }).RequireAuthorization();
+
+        // Hae viimeisin liikennetieto rekisterinumeron perusteella
+
+        app.MapGet("/trafficdata/latestbyreg", async (
+        [FromQuery] string regNumber,
+        ApplicationDbContext db) =>
+        {
+            var monthAgo = DateOnly.FromDateTime(DateTime.Now.AddMonths(-1));
+
+            var latest = await db.Trafficdata
+                .Where(t => t.RegNumber == regNumber && t.Date >= monthAgo)
+                .OrderByDescending(t => t.Date)
+                .ThenByDescending(t => t.EntryTime)
+                .Select(t => new {
+                    t.Company,
+                    t.DriverName
+                })
+                .FirstOrDefaultAsync();
+
+            if (latest is null)
+                return Results.NoContent();
+
+            return Results.Ok(latest);
+        }).RequireAuthorization();
+
 
 
         // Lisää uusi liikenne tieto
@@ -148,7 +174,7 @@ public static class TrafficdataEndpoints
             await db.SaveChangesAsync();
           
             return Results.Created($"/trafficdata/{trafficdata.Id}", trafficdata);
-        });
+        }).RequireAuthorization();
 
         // Poista liikenne tieto id:n perusteella
 
@@ -164,7 +190,7 @@ public static class TrafficdataEndpoints
             db.Trafficdata.Remove(entity);
             await db.SaveChangesAsync();
             return Results.NoContent();
-        });
+        }).RequireAuthorization();
 
 
         // Merkkaa liikenne tieto ulos
@@ -182,7 +208,7 @@ public static class TrafficdataEndpoints
 
             await db.SaveChangesAsync();
             return Results.NoContent();
-        });
+        }).RequireAuthorization();
 
         // Hae liikenne data id:n perusteella
         app.MapGet("/trafficdata/{id}", async (string id, ApplicationDbContext db) =>
@@ -194,7 +220,7 @@ public static class TrafficdataEndpoints
 
             var data = await db.Trafficdata.FindAsync(ulid);
             return data is not null ? Results.Ok(data) : Results.NotFound();
-        });
+        }).RequireAuthorization();
 
         // Tietojen exporttaaminen Exceliin
 
@@ -272,7 +298,7 @@ public static class TrafficdataEndpoints
             context.Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             context.Response.Headers.Append("Content-Disposition", "attachment; filename=results.xlsx");
             await context.Response.BodyWriter.WriteAsync(ms.ToArray());
-        });
+        }).RequireAuthorization();
 
 
 

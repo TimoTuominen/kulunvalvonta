@@ -49,6 +49,11 @@ else
             </TemplateColumn>
         </Columns>
     </QuickGrid>
+    <br />
+    <button class="btn btn-primary mb-3" @onclick="NavigateToRegister">
+        Luo uusi käyttäjä
+    </button>
+
 }
 
 @code {
@@ -117,5 +122,10 @@ else
             var err = await resp.Content.ReadAsStringAsync();
             loadError = $"Poisto epäonnistui: {(int)resp.StatusCode} – {err}";
         }
+    }
+
+    private void NavigateToRegister()
+    {
+        NavigationManager.NavigateTo("/Account/register");
     }
 }
