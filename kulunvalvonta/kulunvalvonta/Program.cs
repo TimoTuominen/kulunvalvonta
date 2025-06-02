@@ -126,6 +126,7 @@ app.Run();
 async Task SeedRolesAndAdminUser(RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager)
 {
     string adminRole = "Admin";
+    string userRole = "User";
     string adminEmail = "admin@example.com";
     string adminPassword = "Admin@123";
 
@@ -134,14 +135,24 @@ async Task SeedRolesAndAdminUser(RoleManager<IdentityRole> roleManager, UserMana
         await roleManager.CreateAsync(new IdentityRole(adminRole));
     }
 
-    var adminUser = await userManager.FindByEmailAsync(adminEmail);
-    if (adminUser == null)
+    if (!await roleManager.RoleExistsAsync(userRole))
     {
-        adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
+        await roleManager.CreateAsync(new IdentityRole(userRole));
+    }
+
+    var admins = await userManager.GetUsersInRoleAsync(adminRole);
+    if (admins == null || !admins.Any())
+    {
+        // Luo Admin käyttäjä
+        var adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
         var result = await userManager.CreateAsync(adminUser, adminPassword);
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(adminUser, adminRole);
+        }
+        else
+        {
+            throw new Exception("Failed to create default admin user: " + string.Join("; ", result.Errors.Select(e => e.Description)));
         }
     }
 }

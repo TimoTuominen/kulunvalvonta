@@ -17,16 +17,6 @@ builder.Services.AddScoped(sp => new HttpClient
 });
 
 
-//builder.Services.AddScoped(sp =>
-//    new HttpClient(new WebAssemblyHttpMessageHandler
-//    {
-//        // tell the browser to include same-site & cross-site cookies
-//        Credentials = FetchCredentialsOption.Include
-//    })
-//    {
-//        BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
-//    });
-
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();

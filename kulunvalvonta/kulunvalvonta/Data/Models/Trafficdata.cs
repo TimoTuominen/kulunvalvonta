@@ -40,13 +40,5 @@ namespace kulunvalvonta.Data.Models
 
     }
 
-    //public enum EntryReason
-    //{
-    //    Tavaraliikenne,
-    //    [Display(Name = "Työmaa-ajo")]
-    //    Työmaa_ajo,
-    //    Vieras,
-    //    Huoltotyö
-    //}
 
 }
