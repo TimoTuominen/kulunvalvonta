@@ -251,7 +251,7 @@ else
     {
        
         if (!await JsRuntime.InvokeAsync<bool>(
-                "Vahvista",
+                "confirm",
                 $"Merkataan poistuneeksi {entry.RegNumber} ({entry.Date:d})?"))
             return;
 
@@ -272,7 +272,7 @@ else
     {
         
         if (!await JsRuntime.InvokeAsync<bool>(
-                "Vahvista",
+                "confirm",
                 $"Oletko varma että haluat poistaa merkinnän {entry.RegNumber} päivältä {entry.Date:d}?"))
             return;
 

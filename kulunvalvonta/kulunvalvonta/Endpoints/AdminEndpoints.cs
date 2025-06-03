@@ -9,7 +9,6 @@ using Kulunvalvonta.Shared;
 namespace kulunvalvonta.Endpoints
 {
 
-
     public static class AdminEndpoints
     {
         public static IEndpointRouteBuilder MapAdminEndpoints(this IEndpointRouteBuilder app)
